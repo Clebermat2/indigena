@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa do Tesouro - Quiz Gestão Escolar</title>
+    
+    <!-- Tailwind CSS (via CDN) para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons (via CDN) para os ícones -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { 
+            animation: fadeIn 0.4s ease-out forwards; 
+        }
+        /* Garantir transição suave de fundo da página inteira */
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+    </style>
+</head>
+<body id="app-body" class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Container onde a aplicação será renderizada dinamicamente -->
+    <div id="app-container" class="w-full max-w-3xl relative"></div>
+
+    <script>
+        // --- DADOS DAS PERGUNTAS ---
+        const QUESTIONS = [
+            {
+                id: 1,
+                text: "A prestação de contas do PDDE está atrasada e o prazo termina amanhã, o que pode bloquear os recursos da escola. Segundo a Matriz de Eisenhower, essa é uma tarefa 'Urgente e Importante' (Quadrante 1) e deve ser feita imediatamente pelo gestor.",
+                answer: true,
+                explanation: "Tarefas com prazos curtos e alto impacto (como o bloqueio de recursos do FNDE) são urgentes e importantes. Devem ser a prioridade máxima e feitas na hora (Fazer Agora)."
+            },
+            {
+                id: 2,
+                text: "O planejamento das compras de materiais pedagógicos que valorizam a cultura indígena para o próximo semestre é uma tarefa 'Importante, mas Não Urgente'. Por isso, ela deve ser deixada para a última hora.",
+                answer: false,
+                explanation: "Tarefas importantes e não urgentes (Quadrante 2) devem ser PLANEJADAS e AGENDADAS com antecedência, não deixadas para a última hora. O planejamento evita que elas se tornem urgências e garantem uma compra de qualidade."
+            },
+            {
+                id: 3,
+                text: "Um vendedor liga no meio da manhã oferecendo produtos que a escola não precisa no momento, interrompendo a reunião com as lideranças da aldeia. Essa interrupção é classificada como 'Urgente, mas Não Importante' (Quadrante 3) e deve ser delegada ou evitada.",
+                answer: true,
+                explanation: "Interrupções que exigem atenção imediata (telefone tocando), mas não contribuem para os objetivos da escola (como a reunião com a aldeia), pertencem ao Quadrante 3. Elas sugam o tempo e devem ser filtradas ou delegadas."
+            },
+            {
+                id: 4,
+                text: "Passar horas em redes sociais sem propósito durante o horário de trabalho na escola é considerado 'Não Urgente e Não Importante' (Quadrante 4) e essas atividades devem ser eliminadas da rotina.",
+                answer: true,
+                explanation: "Distrações que não agregam valor à gestão da escola e não têm prazo são desperdiçadores de tempo (Quadrante 4). Devem ser eliminadas para que o gestor tenha mais tempo para focar na comunidade e na escola."
+            },
+            {
+                id: 5,
+                text: "Organizar reuniões regulares com a comunidade escolar e lideranças da aldeia para alinhar a merenda e projetos pedagógicos é uma tarefa do Quadrante 1 (Urgente e Importante), pois tudo que envolve a comunidade deve ser tratado como uma emergência imediata.",
+                answer: false,
+                explanation: "O alinhamento contínuo com a comunidade é fundamental e de alto impacto (Importante). Porém, se organizado como rotina, não é uma emergência (Não Urgente). Pertence ao Quadrante 2 (Planejar) e é o coração de uma liderança eficaz, devendo ser construído sem pressa."
+            }
+        ];
+
+        // --- ESTADO GLOBAL DA APLICAÇÃO ---
+        let state = {
+            gameState: 'start', // 'start', 'playing', 'feedback', 'end'
+            currentQIndex: 0,
+            score: 0,
+            isCorrectFeedback: null,
+            theme: 'light',
+            fontSize: 16
+        };
+
+        // --- FUNÇÕES DE LÓGICA DO QUIZ ---
+        window.startGame = () => {
+            state.gameState = 'playing';
+            state.currentQIndex = 0;
+            state.score = 0;
+            render();
+        };
+
+        window.handleAnswer = (userAnswer) => {
+            const isCorrect = userAnswer === QUESTIONS[state.currentQIndex].answer;
+            state.isCorrectFeedback = isCorrect;
+            if (isCorrect) {
+                state.score++;
+            }
+            state.gameState = 'feedback';
+            render();
+        };
+
+        window.nextQuestion = () => {
+            if (state.currentQIndex < QUESTIONS.length - 1) {
+                state.currentQIndex++;
+                state.gameState = 'playing';
+            } else {
+                state.gameState = 'end';
+            }
+            render();
+        };
+
+        // --- FUNÇÕES DE ACESSIBILIDADE ---
+        window.toggleTheme = () => {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            render();
+        };
+
+        window.changeFontSize = (step) => {
+            state.fontSize = Math.min(Math.max(state.fontSize + step, 14), 24);
+            render();
+        };
+
+        // --- FUNÇÃO DE RENDERIZAÇÃO (Atualiza a Tela) ---
+        function render() {
+            const body = document.getElementById('app-body');
+            const container = document.getElementById('app-container');
+
+            // Aplica estilos dinâmicos no Body baseados no estado atual
+            const bgMainClass = state.theme === 'light' ? 'bg-[#fcf3d9]' : 'bg-[#1a1512]';
+            body.className = `min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${bgMainClass}`;
+            body.style.fontSize = `${state.fontSize}px`;
+
+            // Classes dinâmicas baseadas no tema
+            const cardClass = state.theme === 'light' 
+                ? 'bg-[#fff9e6] shadow-[0_8px_30px_rgb(0,0,0,0.12)]' 
+                : 'bg-[#2d241d] shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-[#4a3b2f]';
+            const textTitleClass = state.theme === 'light' ? 'text-[#6b3110]' : 'text-[#e8b67d]';
+            const textBodyClass = state.theme === 'light' ? 'text-[#5c3a21]' : 'text-[#d4b9a1]';
+            const buttonClass = 'bg-[#b45309] hover:bg-[#92400e] text-white transition-all transform hover:scale-105 active:scale-95 shadow-md';
+
+            // HTML dos controles de acessibilidade no topo
+            let a11yControls = `
+                <div class="absolute -top-16 right-0 flex items-center gap-2 bg-[#4a3b2f] p-2 rounded-full shadow-lg z-50 text-white md:fixed md:top-4 md:right-4">
+                    <button onclick="toggleTheme()" class="p-1 hover:text-amber-300 transition-colors" title="Mudar Tema">
+                        <i data-lucide="${state.theme === 'light' ? 'moon' : 'sun'}" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <div class="w-px h-4 bg-white/30 mx-1"></div>
+                    <button onclick="changeFontSize(-2)" class="p-1 font-bold hover:text-amber-300 transition-colors text-sm">A-</button>
+                    <button onclick="changeFontSize(2)" class="p-1 font-bold hover:text-amber-300 transition-colors text-sm">A+</button>
+                </div>
+            `;
+
+            let contentHTML = '';
+
+            // TELA INICIAL
+            if (state.gameState === 'start') {
+                contentHTML = `
+                    <div class="text-center flex flex-col items-center">
+                        <i data-lucide="target" class="text-pink-500 mb-6 drop-shadow-md" style="width: 60px; height: 60px; color: #ec4899;"></i>
+                        <h1 class="text-4xl md:text-5xl font-black tracking-wider mb-6 drop-shadow-sm uppercase ${textTitleClass}" style="font-family: Impact, 'Arial Black', sans-serif;">
+                            Mapa do Tesouro
+                        </h1>
+                        <h2 class="text-xl font-bold mb-4 ${textTitleClass}">Instruções para o Gestor Indígena:</h2>
+                        <p class="mb-8 leading-relaxed text-lg max-w-2xl ${textBodyClass}">
+                            Você está à frente da gestão da sua escola indígena e precisa garantir que as tarefas do PDDE sejam feitas corretamente.<br><br>
+                            Responda às perguntas a seguir pensando na rotina da sua comunidade escolar, reuniões com a aldeia, compras que valorizem a cultura local e a prestação de contas do FNDE.
+                        </p>
+                        <button onclick="startGame()" class="${buttonClass} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 mx-auto">
+                            <i data-lucide="compass"></i> Começar o Desafio
+                        </button>
+                    </div>
+                `;
+            } 
+            // TELA DO QUIZ (JOGANDO)
+            else if (state.gameState === 'playing') {
+                const progressDots = QUESTIONS.map((_, i) => 
+                    `<div class="h-3 w-8 rounded-full ${i <= state.currentQIndex ? 'bg-[#b45309]' : 'bg-black/10'}"></div>`
+                ).join('');
+
+                contentHTML = `
+                    <div class="flex flex-col min-h-[350px]">
+                        <div class="flex justify-between items-center mb-8 border-b-2 border-amber-900/10 pb-4">
+                            <span class="font-bold ${textTitleClass} uppercase tracking-wider">
+                                Desafio ${state.currentQIndex + 1} de ${QUESTIONS.length}
+                            </span>
+                            <div class="flex gap-1 hidden sm:flex">
+                                ${progressDots}
+                            </div>
+                        </div>
+                        <div class="flex-1 flex items-center justify-center">
+                            <p class="text-xl md:text-2xl font-medium leading-relaxed mb-10 text-center ${textBodyClass}">
+                                "${QUESTIONS[state.currentQIndex].text}"
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
+                            <button onclick="handleAnswer(true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-5 px-6 rounded-xl text-xl transition-transform hover:scale-105 shadow-md flex justify-center items-center gap-2">
+                                <i data-lucide="check-circle"></i> Verdadeiro
+                            </button>
+                            <button onclick="handleAnswer(false)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-5 px-6 rounded-xl text-xl transition-transform hover:scale-105 shadow-md flex justify-center items-center gap-2">
+                                <i data-lucide="x-circle"></i> Falso
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } 
+            // TELA DE FEEDBACK
+            else if (state.gameState === 'feedback') {
+                const isCorrect = state.isCorrectFeedback;
+                contentHTML = `
+                    <div class="text-center flex flex-col items-center animate-fade-in">
+                        ${isCorrect ? `
+                            <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <i data-lucide="check-circle" style="width: 50px; height: 50px;"></i>
+                            </div>
+                            <h2 class="text-3xl font-black text-green-600 mb-4 uppercase tracking-wide">Parabéns, você acertou!</h2>
+                        ` : `
+                            <div class="w-24 h-24 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <i data-lucide="x-circle" style="width: 50px; height: 50px;"></i>
+                            </div>
+                            <h2 class="text-3xl font-black text-red-600 mb-4 uppercase tracking-wide">Atenção! Resposta Incorreta.</h2>
+                        `}
+
+                        <div class="mt-2 mb-8 p-6 rounded-xl text-left shadow-sm w-full ${state.theme === 'light' ? 'bg-black/5' : 'bg-black/20'}">
+                            <h3 class="font-bold mb-2 uppercase text-sm tracking-wider ${textTitleClass}">Gabarito / Explicação:</h3>
+                            <p class="text-lg leading-relaxed ${textBodyClass}">
+                                ${QUESTIONS[state.currentQIndex].explanation}
+                            </p>
+                        </div>
+
+                        <button onclick="nextQuestion()" class="${buttonClass} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 w-full justify-center md:w-auto">
+                            ${state.currentQIndex < QUESTIONS.length - 1 ? 'Próximo Desafio' : 'Ver Meu Resultado'} 
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+            } 
+            // TELA FINAL
+            else if (state.gameState === 'end') {
+                let endMessage = "";
+                if (state.score === QUESTIONS.length) {
+                    endMessage = `<p class="text-green-600 font-bold text-xl mb-8 max-w-lg">🏆 Excelente! Você tem total domínio da Matriz de Eisenhower e sabe priorizar o que realmente importa para sua comunidade e para o FNDE.</p>`;
+                } else if (state.score >= 3) {
+                    endMessage = `<p class="text-amber-600 font-bold text-xl mb-8 max-w-lg">👍 Muito bom! Você está no caminho certo. Lembre-se sempre de focar no Quadrante 2 (Planejamento) para evitar que os problemas virem urgências.</p>`;
+                } else {
+                    endMessage = `<p class="text-red-500 font-bold text-xl mb-8 max-w-lg">📚 Continue estudando! Reveja a Matriz de Eisenhower. Saber diferenciar o que é urgente do que é importante é a chave para o sucesso do PDDE.</p>`;
+                }
+
+                contentHTML = `
+                    <div class="text-center flex flex-col items-center animate-fade-in">
+                        <i data-lucide="map" class="text-[#b45309] mb-6 drop-shadow-lg" style="width: 80px; height: 80px;"></i>
+                        <h2 class="text-4xl font-black mb-2 uppercase ${textTitleClass}" style="font-family: Impact, 'Arial Black', sans-serif;">
+                            Jornada Concluída!
+                        </h2>
+                        <p class="text-xl mb-8 ${textBodyClass}">
+                            Você chegou ao fim do mapa do tesouro da gestão escolar.
+                        </p>
+
+                        <div class="p-8 rounded-2xl mb-8 w-full max-w-sm mx-auto shadow-inner ${state.theme === 'light' ? 'bg-[#f5deb3]' : 'bg-[#3e2e21]'}">
+                            <p class="text-lg font-bold uppercase tracking-widest mb-2 ${textTitleClass}">Sua Pontuação</p>
+                            <div class="text-6xl font-black text-[#b45309]">
+                                ${state.score} <span class="text-3xl opacity-50">/ ${QUESTIONS.length}</span>
+                            </div>
+                        </div>
+
+                        ${endMessage}
+
+                        <button onclick="startGame()" class="${buttonClass} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 mx-auto">
+                            <i data-lucide="rotate-ccw"></i> Jogar Novamente
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Injeta o HTML completo gerado
+            container.innerHTML = `
+                ${a11yControls}
+                <div class="w-full p-8 md:p-12 rounded-2xl relative ${cardClass} animate-fade-in mt-12 md:mt-0">
+                    ${contentHTML}
+                </div>
+            `;
+
+            // Recria os ícones Lucide sempre que o HTML interno for refeito
+            lucide.createIcons();
+        }
+
+        // Renderiza a tela pela primeira vez ao carregar a página
+        render();
+
+    </script>
+</body>
+</html>
