@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matriz de Eisenhower - Gestão Escolar</title>
+  
+  <!-- Carregamento do Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Carregamento do React e ReactDOM via CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Carregamento do Babel para compilar JSX no navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Estilos e Animações Personalizadas -->
+  <style>
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .animate-fade-in { 
+      animation: fadeIn 0.4s ease-out forwards; 
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+    .animate-shake { 
+      animation: shake 0.4s ease-in-out; 
+    }
+    
+    /* Prevenir scroll horizontal */
+    body { overflow-x: hidden; }
+  </style>
+</head>
+<body>
+  <!-- Onde a aplicação React será injetada -->
+  <div id="root"></div>
+
+  <!-- Script principal da aplicação (JSX) -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- Componentes de Ícones (Substituindo o lucide-react) ---
+    const IconBase = ({ children, size = 24, className = '', strokeWidth = 2, ...props }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+        {children}
+      </svg>
+    );
+
+    const Sun = (props) => <IconBase {...props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></IconBase>;
+    const Moon = (props) => <IconBase {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconBase>;
+    const FileText = (props) => <IconBase {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></IconBase>;
+    const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></IconBase>;
+    const Shield = (props) => <IconBase {...props}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></IconBase>;
+    const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+    const Award = ({ fill = "none", ...props }) => <IconBase fill={fill} {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>;
+    const RotateCcw = (props) => <IconBase {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconBase>;
+
+    // --- Dados Iniciais ---
+    const INITIAL_TASKS = [
+      { id: 't1', text: 'Regularização de documentos da UEx para manter o recebimento dos recursos do PDDE, conforme normas do FNDE.', correct: 'q1', current: 'list' },
+      { id: 't2', text: 'Planejamento antecipado das compras de materiais pedagógicos que valorizem a cultura indígena.', correct: 'q2', current: 'list' },
+      { id: 't3', text: 'Organização de reuniões com a comunidade para decisões coletivas.', correct: 'q2', current: 'list' },
+      { id: 't4', text: 'Demandas inesperadas (interrupções não essenciais) que surgem no dia a dia da escola.', correct: 'q3', current: 'list' },
+      { id: 't5', text: 'Conserto emergencial no telhado da escola após uma forte tempestade.', correct: 'q1', current: 'list' },
+      { id: 't6', text: 'Preenchimento de relatórios repetitivos que podem ser delegados a outro membro da equipe.', correct: 'q3', current: 'list' },
+      { id: 't7', text: 'Passar tempo excessivo em redes sociais durante o expediente escolar.', correct: 'q4', current: 'list' },
+      { id: 't8', text: 'Participar de reuniões informais sem pauta definida e sem impacto no projeto.', correct: 'q4', current: 'list' },
+    ];
+
+    // --- Componente Principal App ---
+    function App() {
+      const [started, setStarted] = useState(false);
+      const [tasks, setTasks] = useState(INITIAL_TASKS);
+      const [theme, setTheme] = useState('dark');
+      const [fontSize, setFontSize] = useState(16);
+      const [selectedTask, setSelectedTask] = useState(null);
+      const [showResult, setShowResult] = useState(false);
+      const [isSuccess, setIsSuccess] = useState(false);
+      const [feedbackError, setFeedbackError] = useState(false);
+
+      // Alternar Tema
+      const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+
+      // Ajustar Tamanho da Fonte
+      const changeFontSize = (step) => {
+        setFontSize((prev) => Math.min(Math.max(prev + step, 12), 24));
+      };
+
+      // Controlos Drag and Drop (Desktop)
+      const handleDragStart = (e, taskId) => {
+        e.dataTransfer.setData('taskId', taskId);
+        setSelectedTask(null);
+      };
+
+      const handleDragOver = (e) => {
+        e.preventDefault();
+      };
+
+      const handleDrop = (e, quadrantId) => {
+        e.preventDefault();
+        const taskId = e.dataTransfer.getData('taskId');
+        if (taskId) {
+          moveTask(taskId, quadrantId);
+        }
+      };
+
+      // Controlos de Clique (Mobile / Acessibilidade)
+      const handleTaskClick = (taskId) => {
+        if (selectedTask === taskId) {
+          setSelectedTask(null);
+        } else {
+          setSelectedTask(taskId);
+        }
+      };
+
+      const handleQuadrantClick = (quadrantId) => {
+        if (selectedTask) {
+          moveTask(selectedTask, quadrantId);
+          setSelectedTask(null);
+        }
+      };
+
+      // Lógica para Mover Tarefa
+      const moveTask = (taskId, target) => {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, current: target } : t));
+        setFeedbackError(false);
+      };
+
+      // Verificar Respostas
+      const verifyAnswers = () => {
+        const allPlaced = tasks.every(t => t.current !== 'list');
+        if (!allPlaced) {
+          alert("Por favor, posicione todas as tarefas nos quadrantes antes de verificar.");
+          return;
+        }
+
+        const allCorrect = tasks.every(t => t.current === t.correct);
+        
+        if (allCorrect) {
+          setIsSuccess(true);
+          setShowResult(true);
+        } else {
+          setFeedbackError(true);
+          setTimeout(() => setFeedbackError(false), 3000);
+        }
+      };
+
+      const resetGame = () => {
+        setTasks(INITIAL_TASKS);
+        setShowResult(false);
+        setIsSuccess(false);
+        setFeedbackError(false);
+        setSelectedTask(null);
+      };
+
+      // Estilos dinâmicos baseados no tema
+      const bgClass = theme === 'dark' ? 'bg-[#0f172a] text-white' : 'bg-gray-50 text-gray-900';
+      const panelClass = theme === 'dark' ? 'bg-[#1e293b]' : 'bg-white shadow-lg border border-gray-200';
+      const taskClass = theme === 'dark' ? 'bg-[#334155] hover:bg-[#475569]' : 'bg-gray-100 border border-gray-300 hover:bg-gray-200';
+
+      return (
+        <div className={`min-h-screen font-sans transition-colors duration-300 flex flex-col ${bgClass}`} style={{ fontSize: `${fontSize}px` }}>
+          
+          {/* Controlos do Cabeçalho */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/20 p-2 rounded-lg backdrop-blur-sm z-50">
+            <button onClick={toggleTheme} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Mudar Tema">
+              {theme === 'dark' ? <Sun size={20} className="text-white" /> : <Moon size={20} className="text-gray-900" />}
+            </button>
+            <div className="w-px h-6 bg-gray-500/50 mx-1"></div>
+            <button onClick={() => changeFontSize(-2)} className="p-2 font-bold hover:bg-white/10 rounded-full transition-colors">A-</button>
+            <button onClick={() => changeFontSize(2)} className="p-2 font-bold hover:bg-white/10 rounded-full transition-colors">A+</button>
+          </div>
+
+          {!started ? (
+            // Modal de Introdução
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className={`${panelClass} max-w-2xl w-full p-8 rounded-2xl text-center shadow-2xl animate-fade-in`}>
+                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FileText size={40} />
+                </div>
+                <h1 className="text-3xl font-bold mb-4 text-blue-600 dark:text-blue-400">Olá, gestor(a)!</h1>
+                <p className="mb-4 leading-relaxed">
+                  Chegou a hora de organizar o nosso projeto <strong>'Além dos Muros da Escola'</strong> na nossa escola indígena. 
+                  Temos muitas ideias, mas os recursos do PDDE e o tempo são limitados.
+                </p>
+                <p className="mb-8 leading-relaxed">
+                  A <strong>Matriz de Eisenhower</strong> é nossa ferramenta secreta para tomar as melhores decisões! 
+                  Vamos classificar cada tarefa para criar nosso Rol de Prioridades. Arraste cada item (ou clique) para o lugar certo!
+                </p>
+                <button 
+                  onClick={() => setStarted(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 active:scale-95"
+                >
+                  Vamos começar!
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Contentor Principal da Matriz
+            <div className="flex-1 flex flex-col p-6 max-w-7xl mx-auto w-full">
+              
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold mb-2">Simulação: Matriz de Eisenhower em Ação</h1>
+                <p className="opacity-80">Arraste cada tarefa para o quadrante correspondente ou clique para selecionar e mover.</p>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-6 flex-1">
+                
+                {/* Coluna Esquerda: Lista de Tarefas */}
+                <div className={`${panelClass} rounded-xl p-4 w-full lg:w-1/3 flex flex-col`}>
+                  <h2 className="text-xl font-bold text-center mb-4 pb-2 border-b border-gray-600/30">Tarefas</h2>
+                  <div 
+                    className="flex-1 overflow-y-auto pr-2 space-y-3"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, 'list')}
+                    onClick={() => handleQuadrantClick('list')}
+                  >
+                    {tasks.filter(t => t.current === 'list').map((task) => (
+                      <div
+                        key={task.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, task.id)}
+                        onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
+                        className={`${taskClass} p-4 rounded-lg cursor-grab active:cursor-grabbing border-l-4 border-l-gray-500 shadow-sm transition-all duration-200
+                          ${selectedTask === task.id ? 'ring-2 ring-blue-500 scale-[1.02] shadow-md' : ''}
+                          ${feedbackError && task.current !== task.correct && task.current !== 'list' ? 'border-red-500 animate-shake' : ''}
+                        `}
+                      >
+                        <div className="flex gap-3">
+                          <div className="text-gray-400 cursor-move hidden md:block">
+                            <div className="w-1 h-1 bg-current rounded-full mb-1"></div>
+                            <div className="w-1 h-1 bg-current rounded-full mb-1"></div>
+                            <div className="w-1 h-1 bg-current rounded-full"></div>
+                          </div>
+                          <p className="text-sm leading-snug">{task.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {tasks.filter(t => t.current === 'list').length === 0 && (
+                      <div className="h-full flex items-center justify-center opacity-50 border-2 border-dashed border-gray-500/30 rounded-lg min-h-[150px]">
+                        <p className="text-center p-4">Todas as tarefas foram distribuídas!</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coluna Direita: 4 Quadrantes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:w-2/3">
+                  
+                  {/* Quadrante 1 */}
+                  <Quadrant 
+                    id="q1" 
+                    title="Quadrante 1: Urgente e Importante" 
+                    subtitle="FAZER AGORA" 
+                    colorClass={theme === 'dark' ? "bg-[#143d29] border-green-600 text-green-400" : "bg-green-50 border-green-500 text-green-800"}
+                    tasks={tasks.filter(t => t.current === 'q1')}
+                    selectedTask={selectedTask}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={handleQuadrantClick}
+                    onTaskClick={handleTaskClick}
+                    taskClass={taskClass}
+                    feedbackError={feedbackError}
+                  />
+
+                  {/* Quadrante 2 */}
+                  <Quadrant 
+                    id="q2" 
+                    title="Quadrante 2: Importante, Não Urgente" 
+                    subtitle="PLANEJAR / AGENDAR" 
+                    colorClass={theme === 'dark' ? "bg-[#2d1b4e] border-purple-600 text-purple-400" : "bg-purple-50 border-purple-500 text-purple-800"}
+                    tasks={tasks.filter(t => t.current === 'q2')}
+                    selectedTask={selectedTask}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={handleQuadrantClick}
+                    onTaskClick={handleTaskClick}
+                    taskClass={taskClass}
+                    feedbackError={feedbackError}
+                  />
+
+                  {/* Quadrante 3 */}
+                  <Quadrant 
+                    id="q3" 
+                    title="Quadrante 3: Urgente, Não Importante" 
+                    subtitle="DELEGAR" 
+                    colorClass={theme === 'dark' ? "bg-[#4a2612] border-orange-600 text-orange-400" : "bg-orange-50 border-orange-500 text-orange-800"}
+                    tasks={tasks.filter(t => t.current === 'q3')}
+                    selectedTask={selectedTask}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={handleQuadrantClick}
+                    onTaskClick={handleTaskClick}
+                    taskClass={taskClass}
+                    feedbackError={feedbackError}
+                  />
+
+                  {/* Quadrante 4 */}
+                  <Quadrant 
+                    id="q4" 
+                    title="Quadrante 4: Não Urgente, Não Importante" 
+                    subtitle="ELIMINAR" 
+                    colorClass={theme === 'dark' ? "bg-[#113243] border-cyan-600 text-cyan-400" : "bg-cyan-50 border-cyan-500 text-cyan-800"}
+                    tasks={tasks.filter(t => t.current === 'q4')}
+                    selectedTask={selectedTask}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={handleQuadrantClick}
+                    onTaskClick={handleTaskClick}
+                    taskClass={taskClass}
+                    feedbackError={feedbackError}
+                  />
+
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-center flex-col items-center gap-4">
+                {feedbackError && (
+                  <p className="text-red-500 font-bold bg-red-500/10 px-4 py-2 rounded flex items-center gap-2">
+                    <XCircle size={20} /> Algumas tarefas estão no quadrante incorreto. Tente novamente!
+                  </p>
+                )}
+                <button 
+                  onClick={verifyAnswers}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg text-lg transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-900/50"
+                >
+                  Verificar Respostas
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal de Sucesso / Medalha */}
+          {showResult && isSuccess && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+              <div className={`${panelClass} max-w-lg w-full p-8 rounded-2xl text-center shadow-2xl relative overflow-hidden`}>
+                <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-300 via-transparent to-transparent"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      <Shield size={100} className="text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" strokeWidth={1.5} />
+                      <Clock size={40} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
+                      <Award size={30} className="text-yellow-200 absolute -bottom-2 -right-2 drop-shadow-lg" fill="currentColor" />
+                    </div>
+                  </div>
+                  
+                  <h2 className="text-3xl font-extrabold text-yellow-500 mb-2 tracking-wide uppercase">
+                    🏅 Mestre do Tempo
+                  </h2>
+                  
+                  <p className="mb-6 mt-4 text-lg leading-relaxed">
+                    Parabéns! Você demonstrou excelente domínio na priorização. 
+                  </p>
+                  <p className="mb-8 opacity-90 text-sm">
+                    Com o relógio e o escudo a seu favor, você agora possui o controle sobre o tempo e a proteção necessária para tomar decisões cruciais sobre o uso dos recursos do PDDE na sua escola indígena. O projeto "Além dos Muros da Escola" será um sucesso!
+                  </p>
+                  
+                  <button 
+                    onClick={resetGame}
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-bold py-3 px-8 rounded-full text-lg transition-transform hover:scale-105 shadow-xl flex items-center justify-center gap-2 w-full"
+                  >
+                    <RotateCcw size={20} /> Jogar Novamente
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- Sub-componente para cada Quadrante ---
+    function Quadrant({ id, title, subtitle, colorClass, tasks, onDragOver, onDrop, onClick, selectedTask, onTaskClick, taskClass, feedbackError }) {
+      const borderColor = colorClass.match(/border-[a-z]+-\d+/)?.[0] || 'border-gray-500';
+
+      return (
+        <div 
+          className={`relative border-2 rounded-xl flex flex-col overflow-hidden transition-colors min-h-[220px] ${colorClass} ${selectedTask ? 'hover:ring-4 hover:ring-blue-500/50 cursor-pointer' : ''}`}
+          onDragOver={onDragOver}
+          onDrop={(e) => onDrop(e, id)}
+          onClick={() => onClick(id)}
+        >
+          <div className={`p-3 border-b-2 ${borderColor} bg-black/10`}>
+            <h3 className="font-bold text-sm md:text-base">{title}</h3>
+            <p className="text-xs uppercase font-semibold tracking-wider opacity-80 mt-1">{subtitle}</p>
+          </div>
+          
+          <div className="p-3 flex-1 flex flex-col gap-2 overflow-y-auto">
+            {tasks.map((task) => (
+              <div
+                key={task.id}
+                onClick={(e) => { e.stopPropagation(); onTaskClick(task.id); }}
+                className={`p-3 rounded-md text-sm cursor-pointer shadow-sm border border-transparent
+                  ${taskClass}
+                  ${selectedTask === task.id ? 'ring-2 ring-blue-500 !bg-blue-600/20' : ''}
+                  ${feedbackError && task.correct !== id ? '!border-red-500 !bg-red-500/20 text-red-100 animate-shake' : ''}
+                  ${feedbackError && task.correct === id ? '!border-green-500 !bg-green-500/20' : ''}
+                `}
+              >
+                {task.text}
+              </div>
+            ))}
+            {tasks.length === 0 && (
+              <div className="flex-1 flex items-center justify-center opacity-30 pointer-events-none min-h-[50px]">
+                <span className="text-sm">Arraste ou clique para mover para cá</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Inicializar o React na div root
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
