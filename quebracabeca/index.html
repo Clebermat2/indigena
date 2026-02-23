@@ -277,18 +277,24 @@
             // Desenhar área do tabuleiro (Sombra base)
             ctx.fillStyle = '#f8fafc';
             ctx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
-            ctx.strokeStyle = '#e2e8f0';
+            ctx.strokeStyle = '#94a3b8'; // Borda externa do tabuleiro com mais contraste
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, BOARD_SIZE, BOARD_SIZE);
 
-            // Desenhar guias (slots vazios)
+            // Desenhar guias (slots vazios) com alto contraste
             pieces.forEach(p => {
                 ctx.save();
                 ctx.translate(p.correctX, p.correctY);
                 drawJigsawPath(ctx, PIECE_W, PIECE_H, p.tabs.t, p.tabs.r, p.tabs.b, p.tabs.l);
-                ctx.strokeStyle = '#e2e8f0';
+                
+                ctx.fillStyle = '#f1f5f9'; // Fundo levemente cinza para destacar a área vazia
+                ctx.fill();
+                
+                ctx.strokeStyle = '#64748b'; // Cor escura (Slate 500) para destacar bem as bordas
                 ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]); // Efeito tracejado para indicar "área de soltar"
                 ctx.stroke();
+                
                 ctx.restore();
             });
 
