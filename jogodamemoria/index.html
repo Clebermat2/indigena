@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória: Prestação de Contas Sem Medo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configura o Tailwind para suportar a alternância manual do modo escuro
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fdf8f5;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Tema Escuro Global para o Body */
+        .dark body {
+            background-color: #0f172a;
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+        }
+
+        /* Classes essenciais para o efeito de virar a carta em 3D */
+        .perspective {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        
+        /* Transição suave para a rotação */
+        .card-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+
+        /* Ajustes de tipografia e scroll para cartas com muito texto */
+        .card-text-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            overflow-y: auto; /* Permite rolar se o texto for muito longo em telas minúsculas */
+        }
+        
+        /* Oculta a scrollbar visualmente mas mantém a funcionalidade */
+        .card-text-container::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen text-gray-800 dark:text-gray-100 font-sans py-8 px-4 transition-colors duration-300">
+
+    <!-- Painel de Acessibilidade -->
+    <div class="fixed top-4 right-4 z-50 flex items-center bg-[#0a0f1a] text-white rounded-lg px-4 py-2 shadow-lg gap-4 border border-slate-700/50">
+        <button onclick="toggleTheme()" class="hover:text-amber-400 focus:outline-none transition-colors flex items-center justify-center" aria-label="Alternar tema escuro e claro" title="Alternar Tema">
+            <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Ícone de Sol (Padrão) -->
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        </button>
+        <div class="w-px h-5 bg-slate-600"></div>
+        <button onclick="changeFontSize(-1)" class="font-bold hover:text-blue-400 focus:outline-none transition-colors" aria-label="Diminuir tamanho da fonte" title="Diminuir Fonte">A-</button>
+        <button onclick="changeFontSize(1)" class="font-bold text-lg hover:text-blue-400 focus:outline-none transition-colors" aria-label="Aumentar tamanho da fonte" title="Aumentar Fonte">A+</button>
+    </div>
+
+    <!-- Cabeçalho -->
+    <div class="max-w-3xl text-center mb-8 mt-10 md:mt-4">
+        <h1 class="text-3xl md:text-4xl font-bold text-emerald-800 dark:text-emerald-400 mb-2">Módulo 4: Prestação de Contas Sem Medo!</h1>
+        <p class="text-gray-600 dark:text-gray-300 text-sm md:text-base">
+            Encontre os pares corretos entre os <strong class="text-amber-600 dark:text-amber-400">Conceitos</strong> e suas <strong class="text-blue-600 dark:text-blue-400">Definições</strong> legais do PDDE para escolas indígenas.
+        </p>
+        <div class="mt-4 flex justify-center gap-4">
+            <div class="bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm font-semibold shadow-sm transition-colors border dark:border-amber-800/50">Conceitos (Amarelo)</div>
+            <div class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-semibold shadow-sm transition-colors border dark:border-blue-800/50">Definições (Azul)</div>
+        </div>
+    </div>
+
+    <!-- Tabuleiro do Jogo -->
+    <div id="game-board" class="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-6xl w-full perspective mb-8">
+        <!-- As cartas serão injetadas aqui via JavaScript -->
+    </div>
+
+    <!-- Controles -->
+    <div class="mt-4">
+        <button onclick="startGame()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform hover:scale-105">
+            Reiniciar Jogo
+        </button>
+    </div>
+
+    <!-- Modal de Vitória (Recompensa) -->
+    <div id="win-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl transform scale-95 transition-all duration-300 border dark:border-slate-700" id="modal-content">
+            <div class="text-6xl mb-4">🏦✅</div>
+            <h2 class="text-3xl font-extrabold text-amber-500 mb-2">🏅 Badge Desbloqueada!</h2>
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">"Guardião dos Recursos"</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                Parabéns! Concedido ao gestor indígena que completa todos os módulos do Nível 1.
+                <br><br>
+                Você agora possui o conhecimento fundamental para proteger, planejar e prestar contas dos recursos da sua escola.
+            </p>
+            <button onclick="closeModal()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow transition">
+                Receber Recompensa
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Dados do Jogo baseados no gabarito fornecido
+        const pairsData = [
+            {
+                id: 1,
+                concept: "Prestação de Contas",
+                definition: "Obrigação legal de comprovar a aplicação correta dos recursos do PDDE com documentos específicos, garantindo transparência na escola indígena."
+            },
+            {
+                id: 2,
+                concept: "GRU – Guia de Recolhimento da União",
+                definition: "Documento usado para devolver saldos ou recursos impugnados ao FNDE, assegurando a gestão correta do dinheiro público."
+            },
+            {
+                id: 3,
+                concept: "Prazo de envio da prestação de contas",
+                definition: "Até 30 de abril do ano subsequente ao recebimento dos recursos, conforme as normas do FNDE."
+            },
+            {
+                id: 4,
+                concept: "Rol de Materiais Prioritários",
+                definition: "Lista obrigatória que orienta a compra de materiais pedagógicos e itens de infraestrutura para a escola indígena, respeitando suas necessidades culturais."
+            },
+            {
+                id: 5,
+                concept: "Comprovante da GRU",
+                definition: "Deve ser anexado à pasta de prestação de contas, com código identificador visível, garantindo rastreabilidade e conformidade legal."
+            }
+        ];
+
+        let cards = [];
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let matchedPairs = 0;
+
+        const boardElement = document.getElementById('game-board');
+        const winModal = document.getElementById('win-modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // Função para embaralhar array (Fisher-Yates)
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // Inicializa o jogo
+        function startGame() {
+            boardElement.innerHTML = '';
+            cards = [];
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            matchedPairs = 0;
+            winModal.classList.add('hidden');
+            modalContent.classList.replace('scale-100', 'scale-95');
+
+            // Cria o array de cartas desmembrando os pares em conceitos e definições
+            pairsData.forEach(pair => {
+                cards.push({ id: pair.id, type: 'concept', text: pair.concept });
+                cards.push({ id: pair.id, type: 'definition', text: pair.definition });
+            });
+
+            // Embaralha as cartas
+            cards = shuffle(cards);
+
+            // Renderiza as cartas na tela
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('relative', 'w-full', 'h-48', 'md:h-56', 'cursor-pointer', 'perspective');
+                cardElement.dataset.id = card.id;
+                cardElement.dataset.index = index;
+
+                // Estilo da frente da carta dependendo se é conceito ou definição
+                const frontColorClass = card.type === 'concept' 
+                    ? 'bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-900/60 dark:border-amber-700 dark:text-amber-100' 
+                    : 'bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-900/60 dark:border-blue-700 dark:text-blue-100';
+                
+                const textSizeClass = card.type === 'concept' ? 'text-lg font-bold' : 'text-sm font-medium';
+
+                cardElement.innerHTML = `
+                    <div class="card-inner absolute w-full h-full transform-style-3d shadow-md rounded-xl border-2 border-transparent transition-all hover:shadow-xl">
+                        
+                        <!-- Verso (Fundo da carta - escondida no início) -->
+                        <div class="backface-hidden absolute w-full h-full bg-emerald-700 dark:bg-emerald-800 rounded-xl border-2 border-emerald-800 dark:border-emerald-950 flex items-center justify-center flex-col">
+                            <span class="text-4xl">🦉</span>
+                            <span class="text-white font-bold mt-2 text-sm tracking-widest">PDDE</span>
+                        </div>
+
+                        <!-- Frente (Conteúdo revelado ao clicar) -->
+                        <div class="backface-hidden rotate-y-180 absolute w-full h-full rounded-xl border-2 ${frontColorClass} shadow-inner">
+                            <div class="card-text-container">
+                                <span class="${textSizeClass}">${card.text}</span>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+
+                cardElement.addEventListener('click', flipCard);
+                boardElement.appendChild(cardElement);
+            });
+        }
+
+        // Lógica de virar a carta
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return; // Evita clicar duas vezes na mesma carta
+
+            const inner = this.querySelector('.card-inner');
+            inner.classList.add('rotate-y-180');
+            
+            // Marca a carta como virada semanticamente para o CSS
+            this.classList.add('flipped');
+
+            if (!firstCard) {
+                // Primeira carta clicada
+                firstCard = this;
+                return;
+            }
+
+            // Segunda carta clicada
+            secondCard = this;
+            checkForMatch();
+        }
+
+        // Verifica se formou par
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.id === secondCard.dataset.id;
+
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        // Par correto encontrado
+        function disableCards() {
+            // Efeito visual de acerto (borda verde)
+            firstCard.querySelector('.card-inner').classList.replace('border-transparent', 'border-emerald-500');
+            secondCard.querySelector('.card-inner').classList.replace('border-transparent', 'border-emerald-500');
+            
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            
+            // Estiliza um pouco para mostrar que está resolvido
+            setTimeout(() => {
+                firstCard.style.opacity = '0.7';
+                secondCard.style.opacity = '0.7';
+                resetBoard();
+                matchedPairs++;
+                
+                if (matchedPairs === pairsData.length) {
+                    showWinModal();
+                }
+            }, 500);
+        }
+
+        // Par incorreto
+        function unflipCards() {
+            lockBoard = true;
+
+            // Efeito visual de erro temporário (borda vermelha)
+            firstCard.querySelector('.card-inner').classList.replace('border-transparent', 'border-red-400');
+            secondCard.querySelector('.card-inner').classList.replace('border-transparent', 'border-red-400');
+
+            setTimeout(() => {
+                firstCard.querySelector('.card-inner').classList.replace('border-red-400', 'border-transparent');
+                secondCard.querySelector('.card-inner').classList.replace('border-red-400', 'border-transparent');
+                
+                firstCard.querySelector('.card-inner').classList.remove('rotate-y-180');
+                secondCard.querySelector('.card-inner').classList.remove('rotate-y-180');
+                
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                
+                resetBoard();
+            }, 1200); // Tempo para o jogador memorizar as cartas antes de desvirar
+        }
+
+        function resetBoard() {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        }
+
+        function showWinModal() {
+            setTimeout(() => {
+                winModal.classList.remove('hidden');
+                // Pequeno delay para a animação do modal funcionar melhor
+                setTimeout(() => {
+                    modalContent.classList.replace('scale-95', 'scale-100');
+                }, 50);
+            }, 500);
+        }
+
+        function closeModal() {
+            winModal.classList.add('hidden');
+            modalContent.classList.replace('scale-100', 'scale-95');
+        }
+
+        // --- Funções de Acessibilidade ---
+        
+        let isDarkMode = false;
+        function toggleTheme() {
+            const htmlElement = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            isDarkMode = !isDarkMode;
+            
+            if (isDarkMode) {
+                htmlElement.classList.add('dark');
+                // Altera o ícone para Lua
+                themeIcon.innerHTML = `
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                `;
+            } else {
+                htmlElement.classList.remove('dark');
+                // Altera o ícone para Sol
+                themeIcon.innerHTML = `
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                `;
+            }
+        }
+
+        let fontZoomLevel = 1;
+        function changeFontSize(step) {
+            // Aumenta ou diminui 10% a cada clique
+            fontZoomLevel += step * 0.1;
+            
+            // Limites de zoom (de 80% até 150%)
+            if (fontZoomLevel < 0.8) fontZoomLevel = 0.8;
+            if (fontZoomLevel > 1.5) fontZoomLevel = 1.5;
+            
+            // Aplica o tamanho na raiz (afeta as unidades relativas de todo o design)
+            document.documentElement.style.fontSize = `${fontZoomLevel * 100}%`;
+        }
+
+        // Inicia o jogo ao carregar a página
+        window.onload = startGame;
+
+    </script>
+</body>
+</html>
