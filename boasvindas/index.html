@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Boas-Vindas</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel (Para compilar o JSX no navegador) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    @keyframes timer {
+      from { width: 0%; }
+      to { width: 100%; }
+    }
+    .timer-animation {
+      animation: timer 8s linear forwards;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- ÍCONES (Substitutos do Lucide-React para funcionar sem Node.js) ---
+    const Sun = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>);
+    const Moon = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>);
+    const RefreshCw = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>);
+    const Award = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg>);
+    const CheckCircle2 = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>);
+    const XCircle = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>);
+    const ArrowRight = ({ size = 24, className = "" }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>);
+
+    // --- DADOS DO QUIZ ---
+    const quizData = {
+      title: "🎯 Nível 1: O Planejamento é a Chave!",
+      objective: "Capacitar o gestor a organizar suas demandas, planejar o uso dos recursos e entender os procedimentos iniciais do PDDE.",
+      module: "🔁 Módulo 1: Organizando a Casa - A Chegada do Gestor",
+      content: "Introdução ao PDDE e a importância do gestor.",
+      questions: [
+        {
+          question: "1. Considerando a realidade das escolas indígenas e a legislação do PDDE (Lei nº 11.947/2009 e resoluções do FNDE), qual é o principal objetivo do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE, destinado aos gestores escolares que lidam com a administração dos recursos financeiros da escola?",
+          options: [
+            "Aprofundar os processos de gestão de recursos subsidiados pelo Fundo Nacional de Desenvolvimento da Educação (FNDE)",
+            "Proporcionar lazer aos gestores escolares",
+            "Ensinar a criação de projetos pedagógicos",
+            "Oferecer cursos de aperfeiçoamento em diversas áreas educacionais"
+          ],
+          answer: 0
+        },
+        {
+          question: "2. Nos cursos de formação do PDDE, utiliza-se o porquinho “Dindin” como mascote para facilitar a compreensão da gestão financeira. Pensando no cotidiano da escola indígena — como o cuidado com os recursos para compra de materiais, pequenos reparos e organização das despesas — por que essa mascote foi escolhido?",
+          options: [
+            "Por ser um animal fofo e divertido",
+            "Por representar, culturalmente em nosso país, a área de finanças demonstrando ao gestor a importância da economia diária e gestão financeira.",
+            "Por ser um símbolo de sorte",
+            "Por ser fácil de desenhar"
+          ],
+          answer: 1
+        },
+        {
+          question: "3. De acordo com a ementa do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE e as normas do FNDE, qual é o foco principal da formação oferecida aos gestores de escolas indígenas que recebem recursos do programa?",
+          options: [
+            "Desenvolvimento de projetos pedagógicos inovadores",
+            "Elaboração de estratégias de captação de recursos privados",
+            "Manutenção da regularidade funcional administrativa, financeira e contábil da UEx para continuidade do recebimento de recursos do PDDE",
+            "Organização de eventos escolares"
+          ],
+          answer: 2
+        },
+        {
+          question: "4. Pensando na realidade das escolas indígenas, onde é comum a necessidade de decidir entre a compra de materiais pedagógicos, pequenos equipamentos ou melhorias na estrutura escolar, um dos objetivos específicos do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE é:",
+          options: [
+            "Ensinar a cozinhar para a merenda escolar",
+            "Auxiliar em relação às prioridades de itens de custeio e capital a serem adquiridos",
+            "Realizar auditorias externas nas escolas",
+            "Desenvolver aplicativos para gestão escolar"
+          ],
+          answer: 1
+        },
+        {
+          question: "5. O Programa Dinheiro Direto na Escola (PDDE), regulamentado pelo FNDE, foi criado com qual finalidade principal, especialmente para atender escolas públicas, inclusive as escolas indígenas, respeitando suas especificidades e autonomia administrativa?",
+          options: [
+            "Centralizar a aplicação dos recursos financeiros nas capitais",
+            "Substituir completamente o papel do gestor escolar na administração dos recursos",
+            "Criar um fundo de reserva para emergências nacionais",
+            "Garantir que as escolas públicas tenham acesso a recursos financeiros para melhoria da infraestrutura, aquisição de materiais e desenvolvimento de projetos pedagógicos"
+          ],
+          answer: 3
+        },
+        {
+          question: "6. Considerando a gestão dos recursos públicos do PDDE nas escolas indígenas, que exige planejamento coletivo, organização documental e prestação de contas conforme as normas do FNDE, segundo Chiavenato (2014), quais são as competências fundamentais para uma boa administração, essenciais para o trabalho do gestor escolar?",
+          options: [
+            "Planejamento, organização, direção e controle",
+            "Vendas, marketing, publicidade e inovação",
+            "Negociação, improvisação, carisma e liderança",
+            "Comunicação, ética, pontualidade e criatividade"
+          ],
+          answer: 0
+        },
+        {
+          question: "7. No cotidiano do gestor de uma escola indígena — que precisa organizar reuniões comunitárias, cuidar da documentação do PDDE e atender às exigências legais do FNDE — qual é a principal função da Matriz de Eisenhower como ferramenta de gestão do tempo?",
+          options: [
+            "Gerar relatórios financeiros automáticos",
+            "Organizar a agenda de reuniões",
+            "Definir quais tarefas devem ser feitas imediatamente, deixadas para depois, delegadas ou descartadas, baseando-se em importância e urgência",
+            "Calcular o tempo de execução de cada tarefa"
+          ],
+          answer: 2
+        },
+        {
+          question: "8. Considerando as regras do PDDE e a necessidade de manter a escola indígena regularizada para continuar recebendo recursos, qual das situações abaixo é um exemplo de tarefa urgente e importante no contexto da gestão escolar?",
+          options: [
+            "O mandato de diretoria vence no dia seguinte e a ata precisa ser paga no cartório hoje com recurso PDDE Básico para regularização",
+            "Planejamento das aquisições ao longo do ano",
+            "As bolas para as aulas de Educação Física encontram-se desgastadas",
+            "Assistir lives e/ou realizar leituras de auto ajuda"
+          ],
+          answer: 0
+        },
+        {
+          question: "9. No contexto da gestão dos recursos do PDDE em escolas indígenas, onde o planejamento antecipado ajuda a respeitar o calendário escolar e as necessidades da comunidade, uma tarefa importante, mas não urgente, poderia ser:",
+          options: [
+            "Resolver uma crise financeira imediata",
+            "O planejamento das aquisições ao longo do ano",
+            "Atender a uma interrupção inesperada",
+            "Lidar com uma emergência de infraestrutura"
+          ],
+          answer: 1
+        },
+        {
+          question: "10. Ao aplicar a Matriz de Eisenhower na gestão do PDDE em uma escola indígena, qual é a principal característica que diferencia uma tarefa urgente de uma tarefa importante, considerando o impacto para o funcionamento da escola e o cumprimento das normas do FNDE?",
+          options: [
+            "O custo da tarefa",
+            "O tempo necessário para a execução",
+            "O impacto no longo prazo e o prazo de ação imediata",
+            "A pessoa responsável pela execução"
+          ],
+          answer: 2
+        }
+      ]
+    };
+
+    function App() {
+      const [gameState, setGameState] = useState('start');
+      const [currentQuestion, setCurrentQuestion] = useState(0);
+      const [score, setScore] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [isAnswered, setIsAnswered] = useState(false);
+      
+      const [isDarkMode, setIsDarkMode] = useState(false);
+      const [fontSize, setFontSize] = useState('normal');
+
+      // Efeito para avançar automaticamente após 8 segundos
+      useEffect(() => {
+        let timeout;
+        if (isAnswered && gameState === 'playing') {
+          timeout = setTimeout(() => {
+            if (currentQuestion < quizData.questions.length - 1) {
+              setCurrentQuestion(prev => prev + 1);
+              setSelectedOption(null);
+              setIsAnswered(false);
+            } else {
+              setGameState('end');
+            }
+          }, 8000);
+        }
+        return () => clearTimeout(timeout);
+      }, [isAnswered, currentQuestion, gameState]);
+
+      // Aplica o dark mode à tag HTML raiz para o Tailwind reconhecer
+      useEffect(() => {
+        if (isDarkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [isDarkMode]);
+
+      const handleStart = () => {
+        setGameState('playing');
+        setCurrentQuestion(0);
+        setScore(0);
+        setSelectedOption(null);
+        setIsAnswered(false);
+      };
+
+      const handleAnswer = (index) => {
+        if (isAnswered) return;
+        setSelectedOption(index);
+        setIsAnswered(true);
+        if (index === quizData.questions[currentQuestion].answer) {
+          setScore(score + 1);
+        }
+      };
+
+      const toggleFontSize = () => {
+        setFontSize(prev => prev === 'normal' ? 'large' : 'normal');
+      };
+
+      const fontClass = fontSize === 'large' ? 'text-lg md:text-xl' : 'text-base md:text-lg';
+      const headerFontClass = fontSize === 'large' ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
+
+      return (
+        <div className="min-h-screen w-full transition-colors duration-300 flex flex-col items-center justify-center p-4 dark:bg-gray-900">
+          
+          {/* Background */}
+          <div className="fixed inset-0 z-0 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-900 dark:to-indigo-950 transition-colors duration-300"></div>
+
+          {/* Controles de Acessibilidade */}
+          <div className="fixed top-4 right-4 z-20 flex gap-2">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 bg-black/40 hover:bg-black/60 text-white rounded shadow transition-colors backdrop-blur-sm"
+              title="Alternar Tema Escuro/Claro"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button 
+              onClick={toggleFontSize}
+              className="p-2 bg-black/40 hover:bg-black/60 text-white rounded shadow transition-colors backdrop-blur-sm flex items-center font-bold"
+              title="Aumentar/Diminuir Fonte"
+            >
+              A<span className="text-xs ml-0.5">{fontSize === 'normal' ? '+' : '-'}</span>
+            </button>
+          </div>
+
+          {/* Main Container */}
+          <main className="relative z-10 w-full max-w-3xl">
+            
+            {/* TELA INICIAL */}
+            {gameState === 'start' && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-10 text-center transform transition-all animate-fade-in">
+                <h1 className={`font-bold text-gray-800 dark:text-white mb-8 ${headerFontClass}`}>
+                  {quizData.title}
+                </h1>
+                
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 mb-8 border border-gray-100 dark:border-gray-600 text-left">
+                  <h2 className={`font-semibold text-indigo-700 dark:text-indigo-300 mb-4 flex items-center gap-2 ${fontClass}`}>
+                    <RefreshCw size={24} className="text-indigo-500" />
+                    {quizData.module}
+                  </h2>
+                  <div className={`space-y-4 text-gray-600 dark:text-gray-300 ${fontClass}`}>
+                    <p><strong>Objetivo:</strong> {quizData.objective}</p>
+                    <p><strong>Conteúdo Base:</strong> {quizData.content}</p>
+                    <p className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <strong>Desafio:</strong> Teste seus conhecimentos com o "Quiz de Boas-Vindas"! São 10 questões para avaliar seu entendimento inicial.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleStart}
+                  className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full md:w-auto ${fontClass}`}
+                >
+                  Começar Desafio!
+                </button>
+              </div>
+            )}
+
+            {/* TELA DO QUIZ */}
+            {gameState === 'playing' && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-10 transform transition-all animate-fade-in">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                  <span className={`font-semibold text-indigo-600 dark:text-indigo-400 ${fontClass}`}>
+                    Questão {currentQuestion + 1} de {quizData.questions.length}
+                  </span>
+                  <span className={`font-medium text-gray-500 dark:text-gray-400 ${fontClass}`}>
+                    Pontuação: {score}
+                  </span>
+                </div>
+
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-8">
+                  <div 
+                    className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                    style={{ width: `${((currentQuestion) / quizData.questions.length) * 100}%` }}
+                  ></div>
+                </div>
+
+                <h2 className={`font-bold text-gray-800 dark:text-white mb-8 leading-relaxed ${fontClass}`}>
+                  {quizData.questions[currentQuestion].question}
+                </h2>
+
+                <div className="space-y-3 mb-4">
+                  {quizData.questions[currentQuestion].options.map((option, index) => {
+                    const isCorrect = index === quizData.questions[currentQuestion].answer;
+                    const isSelected = selectedOption === index;
+                    
+                    let buttonClass = "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-3 ";
+                    
+                    if (!isAnswered) {
+                      buttonClass += "border-gray-200 dark:border-gray-600 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200";
+                    } else {
+                      if (isCorrect) {
+                        buttonClass += "border-green-500 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300";
+                      } else if (isSelected && !isCorrect) {
+                        buttonClass += "border-red-500 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300";
+                      } else {
+                        buttonClass += "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 opacity-60";
+                      }
+                    }
+
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleAnswer(index)}
+                        disabled={isAnswered}
+                        className={`${buttonClass} ${fontClass}`}
+                      >
+                        <div className="mt-1 flex-shrink-0">
+                          {isAnswered && isCorrect && <CheckCircle2 className="text-green-500" size={20} />}
+                          {isAnswered && isSelected && !isCorrect && <XCircle className="text-red-500" size={20} />}
+                          {!isAnswered && <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500"></div>}
+                          {isAnswered && !isSelected && !isCorrect && <div className="w-5 h-5"></div>}
+                        </div>
+                        <span>{option}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {isAnswered && (
+                  <div className="mt-8 animate-fade-in">
+                    <p className={`text-center mb-2 font-medium text-gray-500 dark:text-gray-400 ${fontSize === 'large' ? 'text-base' : 'text-sm'}`}>
+                      {currentQuestion < quizData.questions.length - 1 ? 'Avançando para a próxima pergunta em 8 segundos...' : 'Calculando resultado...'}
+                    </p>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-indigo-500 h-1.5 rounded-full timer-animation"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TELA FINAL */}
+            {gameState === 'end' && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-10 text-center transform transition-all animate-fade-in">
+                <div className="mb-6 inline-block">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-yellow-400 blur-xl opacity-50 rounded-full animate-pulse"></div>
+                    <div className="relative bg-gradient-to-b from-yellow-300 to-yellow-500 p-6 rounded-full border-4 border-yellow-200 shadow-lg">
+                      <Award size={64} className="text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                <h1 className={`font-bold text-gray-800 dark:text-white mb-4 ${headerFontClass}`}>
+                  Missão Concluída!
+                </h1>
+                
+                <p className={`text-xl font-medium text-gray-600 dark:text-gray-300 mb-8 ${fontClass}`}>
+                  Você acertou <span className="text-indigo-600 dark:text-indigo-400 font-bold">{score}</span> de {quizData.questions.length} questões.
+                </p>
+
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-xl p-8 mb-8 border border-indigo-100 dark:border-gray-600 shadow-inner">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <span className="text-4xl">🏅</span>
+                    <h2 className={`font-bold text-indigo-800 dark:text-indigo-300 ${headerFontClass}`}>
+                      Badge: Chaves da Escola
+                    </h2>
+                  </div>
+                  <p className={`text-gray-700 dark:text-gray-300 leading-relaxed ${fontClass}`}>
+                    Este é o badge <strong>"Chaves da Escola"</strong>, que recebe ao concluir o primeiro módulo do curso. 
+                    Ele representa a primeira grande conquista na jornada, simbolizando que o gestor agora tem as "chaves" 
+                    para iniciar o planeamento correto dos recursos do PDDE.
+                  </p>
+                </div>
+
+                <button 
+                  onClick={handleStart}
+                  className={`bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3 px-8 rounded-xl shadow transition-all flex items-center justify-center gap-2 mx-auto ${fontClass}`}
+                >
+                  <RefreshCw size={20} />
+                  Refazer Quiz
+                </button>
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
