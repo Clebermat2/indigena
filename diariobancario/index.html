@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário Bancário do Gestor - PDDE</title>
+    <style>
+        /* --- Variáveis de Tema --- */
+        :root {
+            --bg-body: #f4f7f9;
+            --bg-card: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --primary: #5a4fcf;
+            --primary-hover: #4a3ebf;
+            --slot-border: #999999;
+            --slot-bg: #eeeeee;
+            --word-bg: #ffffff;
+            --word-text: #333333;
+            --word-border: #cccccc;
+            --error-color: #dc3545;
+            --success-color: #198754;
+            --font-size-base: 16px;
+        }
+
+        /* Tema Escuro (Padrão para esta atividade conforme referência) */
+        [data-theme="dark"] {
+            --bg-body: #1a1a1a;
+            --bg-card: #2b2b2b;
+            --text-main: #f0f0f0;
+            --text-muted: #aaaaaa;
+            --primary: #7b72e9;
+            --slot-border: #888888;
+            --slot-bg: #333333;
+            --word-bg: #ffffff;
+            --word-text: #000000;
+            --word-border: #ffffff;
+        }
+
+        /* --- Estilos Globais --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-size: var(--font-size-base);
+            padding-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        *:focus {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* --- Barra de Acessibilidade --- */
+        .a11y-bar {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 20px;
+            gap: 10px;
+            background-color: var(--primary);
+        }
+
+        .a11y-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .a11y-btn:hover { background-color: rgba(255, 255, 255, 0.3); }
+
+        /* --- Cabeçalho --- */
+        header {
+            max-width: 900px;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--text-main); }
+        header h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--primary); }
+        header p { color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; text-align: justify; }
+
+        .context-box {
+            background-color: rgba(123, 114, 233, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 8px 8px 0;
+            text-align: left;
+        }
+
+        /* --- Container do Jogo --- */
+        .game-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 800px;
+            width: 95%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .game-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+
+        /* --- Frases e Slots --- */
+        .sentences-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .sentence {
+            font-size: 1.1rem;
+            line-height: 2;
+        }
+
+        .drop-slot {
+            display: inline-block;
+            min-width: 120px;
+            height: 34px;
+            border: 2px dashed var(--slot-border);
+            border-radius: 6px;
+            vertical-align: middle;
+            background-color: var(--slot-bg);
+            margin: 0 5px;
+            cursor: pointer;
+            position: relative;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            color: var(--word-text);
+        }
+
+        .drop-slot.drag-over {
+            background-color: rgba(90, 79, 207, 0.2);
+            border-color: var(--primary);
+            border-style: solid;
+        }
+
+        .drop-slot.filled {
+            background-color: var(--word-bg);
+            border: 1px solid var(--word-border);
+            border-style: solid;
+            cursor: default;
+        }
+
+        /* --- Banco de Palavras --- */
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding-top: 20px;
+            border-top: 1px solid var(--slot-border);
+        }
+
+        .word-pill {
+            background-color: var(--word-bg);
+            color: var(--word-text);
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: grab;
+            user-select: none;
+            border: 1px solid var(--word-border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .word-pill:active { cursor: grabbing; }
+        .word-pill.hidden { display: none; }
+
+        /* --- Modais --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background-color: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-title { font-size: 1.5rem; margin-bottom: 15px; }
+        .modal-title.success { color: var(--success-color); }
+        .modal-title.error { color: var(--error-color); }
+        
+        .modal-message { margin-bottom: 25px; line-height: 1.6; color: var(--text-main); font-size: 1.05rem;}
+        
+        .feedback-box {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid var(--success-color);
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .modal-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        /* --- Recompensa / Badge --- */
+        .badge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2a2a2a, #111);
+            border: 2px solid gold;
+            border-radius: 12px;
+            color: white;
+        }
+        
+        [data-theme="light"] .badge-container {
+             background: linear-gradient(135deg, #fff, #f0f0f0);
+             color: #333;
+        }
+
+        .badge-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+
+        /* Animação de erro */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; border-color: var(--error-color) !important; background-color: rgba(220, 53, 69, 0.1) !important;}
+
+        /* Acessibilidade de Teclado no Modal */
+        .word-list-modal {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .word-btn-modal {
+            background-color: var(--word-bg);
+            color: var(--word-text);
+            border: 1px solid var(--word-border);
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .word-btn-modal:hover { background-color: var(--slot-bg); }
+
+        .screen-reader-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- Barra de Acessibilidade -->
+    <div class="a11y-bar">
+        <button class="a11y-btn" id="btn-theme" aria-label="Alternar modo escuro ou claro">☀️</button>
+        <button class="a11y-btn" id="btn-font-decrease" aria-label="Diminuir tamanho da fonte">A-</button>
+        <button class="a11y-btn" id="btn-font-increase" aria-label="Aumentar tamanho da fonte">A+</button>
+    </div>
+
+    <!-- Região Viva para Leitores de Tela -->
+    <div aria-live="polite" class="screen-reader-only" id="sr-announcer">Jogo carregado. Arraste as palavras ou use o teclado (tecla Enter nos espaços vazios) para preencher as frases.</div>
+
+    <header>
+        <h2>Nível 3 – Avançado: Multiplicando o Impacto</h2>
+        <h1>"Preencha os Espaços" – Diário Bancário do Gestor</h1>
+        <div class="context-box">
+            <strong>Cenário:</strong> O gestor da escola indígena recebeu os extratos da conta PDDE e precisa entender as movimentações financeiras do mês de abril. Além de garantir a transparência, é importante que os recursos sejam planejados e aplicados conforme a Lei nº 11.494/2007, o Regimento do FNDE e as diretrizes da Educação Escolar Indígena.
+        </div>
+    </header>
+
+    <main class="game-card">
+        <h2 class="game-title">Complete as Frases</h2>
+        <p class="game-subtitle">Arraste as palavras para os espaços corretos ou pressione Enter em um espaço para selecionar.</p>
+
+        <div class="sentences-container" id="sentences-board">
+            <!-- As frases serão geradas via JS -->
+        </div>
+
+        <div class="word-bank" id="word-bank" role="group" aria-label="Banco de Palavras disponíveis">
+            <!-- Palavras serão geradas via JS -->
+        </div>
+    </main>
+
+    <!-- Modal de Erro Rápido -->
+    <div class="modal-overlay" id="modal-error" role="dialog" aria-modal="true" aria-labelledby="error-title">
+        <div class="modal-box" style="max-width: 400px;">
+            <h2 class="modal-title error" id="error-title">Incorreto</h2>
+            <p class="modal-message" id="error-msg">Essa palavra não se encaixa neste contexto. Tente novamente!</p>
+            <button class="modal-btn" onclick="closeModal('modal-error')">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal Acessibilidade (Teclado) -->
+    <div class="modal-overlay" id="modal-keyboard" role="dialog" aria-modal="true" aria-labelledby="kbd-title">
+        <div class="modal-box">
+            <h2 class="modal-title" id="kbd-title">Selecione uma Palavra</h2>
+            <p class="modal-message">Escolha a palavra correta para preencher o espaço selecionado:</p>
+            <div class="word-list-modal" id="modal-word-list"></div>
+            <button class="modal-btn" onclick="closeModal('modal-keyboard')">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal Vitória -->
+    <div class="modal-overlay" id="modal-win" role="dialog" aria-modal="true" aria-labelledby="win-title">
+        <div class="modal-box">
+            <h2 class="modal-title success" id="win-title">Excelente Trabalho!</h2>
+            
+            <div class="badge-container">
+                <div class="badge-icon">🏅</div>
+                <h3>Badge Conquistado:</h3>
+                <h2>"Detetive das Finanças"</h2>
+                <p style="font-size: 0.85rem; margin-top: 5px;">Você demonstrou domínio sobre leitura e organização das informações bancárias e contábeis do PDDE.</p>
+            </div>
+
+            <div class="feedback-box">
+                <strong>Feedback de Gestão:</strong><br>
+                • Separar custeio e capital ajuda a priorizar a aquisição de materiais pedagógicos e infraestrutura da escola indígena, garantindo conformidade com a legislação.<br><br>
+                • A conciliação bancária permite que a escola detecte erros ou inconsistências, promovendo transparência e responsabilidade financeira, essenciais para a gestão de recursos públicos.
+            </div>
+
+            <button class="modal-btn" onclick="location.reload()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- Dados do Jogo --- */
+        const gameData = [
+            {
+                id: 1,
+                textParts: ["1. A conciliação bancária compara as ", " e ", " apontadas no extrato com as despesas efetivamente realizadas."],
+                slots: [
+                    { id: "slot-1", validAnswers: ["entradas", "saídas"], pairGroup: "A" },
+                    { id: "slot-2", validAnswers: ["entradas", "saídas"], pairGroup: "A" }
+                ]
+            },
+            {
+                id: 2,
+                textParts: ["2. Os saldos do PDDE devem ser separados entre ", " e ", " para facilitar a prestação de contas."],
+                slots: [
+                    { id: "slot-3", validAnswers: ["custeio", "capital"], pairGroup: "B" },
+                    { id: "slot-4", validAnswers: ["custeio", "capital"], pairGroup: "B" }
+                ]
+            },
+            {
+                id: 3,
+                textParts: ["3. O ", " bancário apresenta todas as transações realizadas, enquanto o ", " bancário mostra o valor disponível em conta."],
+                slots: [
+                    { id: "slot-5", validAnswers: ["extrato"] },
+                    { id: "slot-6", validAnswers: ["saldo"] }
+                ]
+            },
+            {
+                id: 4,
+                textParts: ["4. O ", " é o valor que sobra após subtrair as despesas da receita."],
+                slots: [
+                    { id: "slot-7", validAnswers: ["lucro"] }
+                ]
+            },
+            {
+                id: 5,
+                textParts: ["5. Um ", " é um plano financeiro para um período futuro."],
+                slots: [
+                    { id: "slot-8", validAnswers: ["orçamento"] }
+                ]
+            }
+        ];
+
+        const wordsAvailable = ["orçamento", "lucro", "extrato", "custeio", "entradas", "saídas", "saldo", "capital"];
+        let slotsState = {}; // Guarda o que foi preenchido em cada slot
+        let activeSlotForKeyboard = null;
+
+        const formatSR = (text) => document.getElementById('sr-announcer').textContent = text;
+
+        /* --- Inicialização da Interface --- */
+        function initGame() {
+            const board = document.getElementById('sentences-board');
+            const bank = document.getElementById('word-bank');
+            
+            // Gerar Frases
+            gameData.forEach(sentence => {
+                const p = document.createElement('div');
+                p.className = 'sentence';
+                
+                let html = sentence.textParts[0];
+                sentence.slots.forEach((slot, index) => {
+                    html += `<button class="drop-slot" id="${slot.id}" aria-label="Espaço vazio ${slot.id.replace('slot-','')} para preencher" tabindex="0"></button>`;
+                    slotsState[slot.id] = null;
+                    if (sentence.textParts[index + 1]) {
+                        html += sentence.textParts[index + 1];
+                    }
+                });
+                
+                p.innerHTML = html;
+                board.appendChild(p);
+            });
+
+            // Gerar Banco de Palavras (Embaralhado visualmente, mas mantendo a lista)
+            const shuffledWords = [...wordsAvailable].sort(() => Math.random() - 0.5);
+            shuffledWords.forEach(word => {
+                const w = document.createElement('div');
+                w.className = 'word-pill';
+                w.textContent = word;
+                w.id = `word-${word}`;
+                w.draggable = true;
+                w.setAttribute('role', 'button');
+                w.setAttribute('tabindex', '-1'); // Ignora no tab, usa-se o clique no slot
+                
+                w.addEventListener('dragstart', handleDragStart);
+                w.addEventListener('dragend', handleDragEnd);
+                bank.appendChild(w);
+            });
+
+            setupDropZones();
+        }
+
+        /* --- Lógica de Validação --- */
+        function validateDrop(word, slotId) {
+            // Encontrar config do slot
+            let slotConfig = null;
+            for (let s of gameData) {
+                const found = s.slots.find(x => x.id === slotId);
+                if (found) { slotConfig = found; break; }
+            }
+
+            if (!slotConfig.validAnswers.includes(word)) return false;
+
+            // Checar pares intercambiáveis (ex: entradas e saídas)
+            if (slotConfig.pairGroup) {
+                // Descobrir qual é o "irmão"
+                const parentSentence = gameData.find(s => s.slots.some(x => x.id === slotId));
+                const siblingSlot = parentSentence.slots.find(x => x.id !== slotId);
+                
+                // Se o irmão já está preenchido com esta mesma palavra, rejeita
+                if (slotsState[siblingSlot.id] === word) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function applyWordToSlot(word, slotId) {
+            const slotEl = document.getElementById(slotId);
+            const wordEl = document.getElementById(`word-${word}`);
+
+            // Atualiza o estado
+            slotsState[slotId] = word;
+
+            // Visual do Slot
+            slotEl.textContent = word;
+            slotEl.classList.add('filled');
+            slotEl.classList.remove('drag-over');
+            slotEl.setAttribute('aria-label', `Espaço preenchido com a palavra ${word}`);
+            slotEl.setAttribute('disabled', 'true'); // Impede clique novamente
+
+            // Esconde palavra do banco
+            wordEl.classList.add('hidden');
+
+            formatSR(`Correto! A palavra ${word} preencheu o espaço.`);
+
+            checkWin();
+        }
+
+        function checkWin() {
+            const allFilled = Object.values(slotsState).every(val => val !== null);
+            if (allFilled) {
+                setTimeout(() => {
+                    document.getElementById('modal-win').classList.add('active');
+                    formatSR("Você completou todas as frases corretamente! Parabéns, você ganhou o badge Detetive das Finanças.");
+                    document.getElementById('win-title').focus();
+                }, 500);
+            }
+        }
+
+        /* --- Drag and Drop --- */
+        let draggedWord = null;
+
+        function handleDragStart(e) {
+            draggedWord = e.target.textContent;
+            e.dataTransfer.setData('text/plain', draggedWord);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        }
+
+        function handleDragEnd(e) {
+            e.target.style.opacity = '1';
+            draggedWord = null;
+            document.querySelectorAll('.drop-slot').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function setupDropZones() {
+            const slots = document.querySelectorAll('.drop-slot');
+            
+            slots.forEach(slot => {
+                // Eventos de Mouse/Touch Drag
+                slot.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    if(!slot.classList.contains('filled')) slot.classList.add('drag-over');
+                });
+
+                slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+
+                slot.addEventListener('drop', e => {
+                    e.preventDefault();
+                    slot.classList.remove('drag-over');
+                    
+                    if (slot.classList.contains('filled')) return;
+
+                    const word = e.dataTransfer.getData('text/plain');
+                    if (validateDrop(word, slot.id)) {
+                        applyWordToSlot(word, slot.id);
+                    } else {
+                        triggerError(slot);
+                    }
+                });
+
+                // Eventos de Teclado/Clique (Acessibilidade)
+                slot.addEventListener('click', () => openKeyboardModal(slot));
+            });
+        }
+
+        function triggerError(slotEl) {
+            slotEl.classList.add('shake');
+            setTimeout(() => slotEl.classList.remove('shake'), 400);
+            formatSR("Palavra incorreta para este espaço.");
+            // Pequeno delay para evitar sobreposição de SR, mas visualmente imediato.
+        }
+
+        /* --- Modais e Acessibilidade de Teclado --- */
+        function openKeyboardModal(slotEl) {
+            if (slotEl.classList.contains('filled')) return;
+            
+            activeSlotForKeyboard = slotEl.id;
+            const modal = document.getElementById('modal-keyboard');
+            const listContainer = document.getElementById('modal-word-list');
+            
+            listContainer.innerHTML = ''; // Limpa a lista
+            
+            // Adiciona apenas palavras que ainda não foram usadas
+            wordsAvailable.forEach(word => {
+                const wordEl = document.getElementById(`word-${word}`);
+                if (!wordEl.classList.contains('hidden')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'word-btn-modal';
+                    btn.textContent = word;
+                    btn.onclick = () => handleKeyboardSelection(word);
+                    listContainer.appendChild(btn);
+                }
+            });
+
+            modal.classList.add('active');
+            formatSR("Selecione uma palavra na lista para preencher o espaço.");
+            
+            // Foca no primeiro botão
+            setTimeout(() => {
+                const firstBtn = listContainer.querySelector('button');
+                if(firstBtn) firstBtn.focus();
+            }, 100);
+        }
+
+        function handleKeyboardSelection(word) {
+            if (validateDrop(word, activeSlotForKeyboard)) {
+                applyWordToSlot(word, activeSlotForKeyboard);
+                closeModal('modal-keyboard');
+                
+                // Retorna o foco para o próximo slot vazio, se houver
+                const nextEmpty = document.querySelector('.drop-slot:not(.filled)');
+                if (nextEmpty) nextEmpty.focus();
+            } else {
+                closeModal('modal-keyboard');
+                const slotEl = document.getElementById(activeSlotForKeyboard);
+                triggerError(slotEl);
+                document.getElementById('modal-error').classList.add('active');
+                setTimeout(() => document.querySelector('#modal-error .modal-btn').focus(), 100);
+            }
+            activeSlotForKeyboard = null;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        /* --- Acessibilidade Visual (Tema e Fonte) --- */
+        let fontSizeMultiplier = 1;
+
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            const body = document.documentElement;
+            const btn = document.getElementById('btn-theme');
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                document.body.setAttribute('data-theme', 'light');
+                btn.textContent = '🌙';
+                formatSR("Modo claro ativado.");
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                btn.textContent = '☀️';
+                formatSR("Modo escuro ativado.");
+            }
+        });
+
+        document.getElementById('btn-font-increase').addEventListener('click', () => {
+            if (fontSizeMultiplier < 1.4) {
+                fontSizeMultiplier += 0.1;
+                document.documentElement.style.setProperty('--font-size-base', `${16 * fontSizeMultiplier}px`);
+                formatSR("Tamanho da fonte aumentado.");
+            }
+        });
+
+        document.getElementById('btn-font-decrease').addEventListener('click', () => {
+            if (fontSizeMultiplier > 0.8) {
+                fontSizeMultiplier -= 0.1;
+                document.documentElement.style.setProperty('--font-size-base', `${16 * fontSizeMultiplier}px`);
+                formatSR("Tamanho da fonte diminuído.");
+            }
+        });
+
+        // Inicia o Jogo
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
