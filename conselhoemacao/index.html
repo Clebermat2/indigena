@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conselho em Ação – Escolas Indígenas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light green background */
+            background-image: radial-gradient(#dcfce7 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .badge-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .badge-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-slate-800">
+
+    <div id="app" class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="bg-emerald-700 text-white p-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                    Conselho em Ação
+                </h1>
+                <p class="text-emerald-100 mt-1">Nível 2: Escolas Indígenas</p>
+            </div>
+            <div class="hidden md:block bg-emerald-800 p-3 rounded-lg text-center">
+                <span class="block text-xs uppercase tracking-wider text-emerald-300">Progresso</span>
+                <span id="header-progress" class="font-bold text-xl">0/6</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-6 md:p-8 min-h-[400px]">
+            
+            <!-- VIEW: Start/Context -->
+            <div id="view-start" class="fade-in space-y-6">
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg">
+                    <h2 class="text-xl font-bold text-amber-800 mb-2 flex items-center gap-2">
+                        <i data-lucide="map" class="w-6 h-6"></i> O Contexto
+                    </h2>
+                    <p class="text-slate-700 leading-relaxed">
+                        Na sua escola indígena, há duas demandas importantes: a reforma dos banheiros da escola e a criação de uma horta pedagógica que valorize alimentos tradicionais da comunidade (milho, mandioca, frutas da região).
+                    </p>
+                    <p class="text-slate-700 leading-relaxed mt-2">
+                        <strong>Seu Objetivo:</strong> Você deve mediar o debate entre o Conselho Escolar e a comunidade, respeitando a cultura local e a legislação do PDDE (Lei nº 11.494/2007 e Resolução FNDE nº 07/2020), garantindo o uso correto dos recursos públicos. Tome decisões rápidas, corretas e legais!
+                    </p>
+                </div>
+                <div class="text-center pt-4">
+                    <button onclick="startGame()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 text-lg flex items-center gap-2 mx-auto">
+                        Iniciar Mediação <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: Quiz -->
+            <div id="view-quiz" class="hidden fade-in space-y-6">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="question-counter" class="text-sm font-semibold text-emerald-600 uppercase tracking-wider">Pergunta 1 de 6</span>
+                    <div class="w-1/2 bg-gray-200 rounded-full h-2.5">
+                        <div id="progress-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" style="width: 16.6%"></div>
+                    </div>
+                </div>
+
+                <h2 id="question-text" class="text-xl md:text-2xl font-semibold text-slate-800 leading-snug">
+                    <!-- Question injected here -->
+                </h2>
+
+                <div id="options-container" class="space-y-3 mt-6">
+                    <!-- Options injected here -->
+                </div>
+            </div>
+
+            <!-- VIEW: Feedback -->
+            <div id="view-feedback" class="hidden fade-in space-y-6">
+                <div id="feedback-header" class="p-6 rounded-xl text-center border-2">
+                    <!-- Injected via JS -->
+                </div>
+                
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                        <i data-lucide="info" class="w-5 h-5"></i> Justificativa Legal e Pedagógica
+                    </h3>
+                    <p id="justification-text" class="text-blue-800 leading-relaxed">
+                        <!-- Justification injected here -->
+                    </p>
+                </div>
+
+                <div class="text-center pt-4">
+                    <button onclick="nextQuestion()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-full shadow transition-all flex items-center gap-2 mx-auto">
+                        Continuar <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: End / Rewards -->
+            <div id="view-end" class="hidden fade-in space-y-8 text-center py-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">Missão Cumprida!</h2>
+                    <p class="text-lg text-slate-600">Você concluiu o Estudo de Caso: O Imprevisto com <span id="final-score" class="font-bold text-emerald-600"></span> acertos.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6 w-full mx-auto mt-8">
+                    
+                    <!-- Badge 1 -->
+                    <div class="bg-gradient-to-br from-amber-100 to-yellow-50 p-6 rounded-2xl border border-amber-200 shadow-sm relative badge-shine group">
+                        <div class="w-20 h-20 mx-auto bg-amber-500 rounded-full flex items-center justify-center text-white shadow-inner mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="lightbulb" class="w-10 h-10"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-amber-900 mb-2">Solucionador de Problemas</h3>
+                        <p class="text-sm text-amber-800/80">
+                            Momento Eureca! Você tem a capacidade de analisar problemas práticos e encontrar a solução correta e em conformidade com as normas do PDDE.
+                        </p>
+                    </div>
+
+                    <!-- Badge 2 -->
+                    <div class="bg-gradient-to-br from-blue-100 to-indigo-50 p-6 rounded-2xl border border-blue-200 shadow-sm relative badge-shine group" style="animation-delay: 1.5s;">
+                        <div class="w-20 h-20 mx-auto bg-blue-600 rounded-full flex items-center justify-center text-white shadow-inner mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="pie-chart" class="w-10 h-10"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-blue-900 mb-2">Estrategista Financeiro</h3>
+                        <p class="text-sm text-blue-800/80">
+                            Conclusão do Nível 2. Você desenvolveu visão ampla e capacidade de planejar/executar finanças de forma estratégica com recursos do PDDE.
+                        </p>
+                    </div>
+
+                    <!-- Badge 3 -->
+                    <div class="bg-gradient-to-br from-emerald-100 to-teal-50 p-6 rounded-2xl border border-emerald-200 shadow-sm relative badge-shine group" style="animation-delay: 3s;">
+                        <div class="w-20 h-20 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-white shadow-inner mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="shield-check" class="w-10 h-10"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-emerald-900 mb-2">Guardião dos Documentos</h3>
+                        <p class="text-sm text-emerald-800/80">
+                            Recompensa por demonstrar conhecimento sobre a estrutura e os critérios obrigatórios da prestação de contas na escola indígena.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="pt-8">
+                    <button onclick="location.reload()" class="text-slate-500 hover:text-emerald-600 font-semibold underline underline-offset-4 transition-colors">
+                        Jogar Novamente
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Game Data
+        const questions = [
+            {
+                question: "Qual deve ser sua primeira ação como gestor(a) para iniciar a mediação?",
+                options: [
+                    "Convocar uma reunião de emergência e impor a necessidade técnica da reforma dos banheiros, explicando a urgência.",
+                    "Organizar uma reunião com o Conselho Escolar e a APM para ouvir e entender detalhadamente as duas propostas, sem tomar um lado inicialmente.",
+                    "Ignorar o desejo da comunidade pela horta, pois os laudos técnicos sobre os banheiros são soberanos.",
+                    "Iniciar imediatamente a obra dos banheiros e prometer que a horta será o próximo projeto a ser considerado."
+                ],
+                correctIndex: 1, // B
+                justificativa: "Ouvir todas as partes respeita o princípio da participação social previsto no PDDE e na legislação indígena (Art. 3º, Decreto nº 6.861/2009)."
+            },
+            {
+                question: "Ao apresentar a pauta ao Conselho Escolar, qual deve ser a sua principal estratégia de comunicação?",
+                options: [
+                    "Apresentar os dados técnicos da reforma dos banheiros e a proposta da horta como duas opções excludentes, forçando uma votação imediata.",
+                    "Expor de forma transparente o laudo técnico sobre a urgência dos banheiros e, ao mesmo tempo, validar a proposta da horta como uma valiosa iniciativa pedagógica, abrindo espaço para o debate.",
+                    "Minimizar a importância da horta, tratando-a como um projeto secundário e de menor impacto para a escola.",
+                    "Deixar que os membros do conselho debatam livremente sem fornecer o laudo técnico para não influenciar a decisão."
+                ],
+                correctIndex: 1, // B
+                justificativa: "A comunicação clara e respeitosa fortalece a participação da comunidade e integra a perspectiva cultural no planejamento escolar."
+            },
+            {
+                question: "Como você pode conectar a proposta da horta ao Projeto Político-Pedagógico (PPP) da escola para valorizá-la no debate?",
+                options: [
+                    "Argumentando que a horta é um projeto pedagógico que pode ser trabalhado em disciplinas como ciências, matemática e conhecimentos tradicionais, além de promover a educação alimentar.",
+                    "Sugerindo que a horta é apenas uma atividade de lazer sem conexão real com o currículo.",
+                    "Dizendo que a horta pode ser construída com doações, sem usar os recursos do PDDE, resolvendo o problema rapidamente.",
+                    "Afirmando que, embora seja uma boa ideia, o PPP atual não prevê a criação de uma horta e, por isso, não pode ser priorizada."
+                ],
+                correctIndex: 0, // A
+                justificativa: "O PPP é um documento dinâmico e deve refletir práticas pedagógicas contextualizadas culturalmente, conforme a Resolução CNE/CEB nº 04/2010 sobre Educação Escolar Indígena."
+            },
+            {
+                question: "Qual das seguintes estratégias de mediação seria mais eficaz para encontrar uma solução colaborativa?",
+                options: [
+                    "Dividir o recurso do PDDE exatamente ao meio, realizando uma reforma parcial nos banheiros e iniciando uma horta pequena.",
+                    "Propor a criação de uma comissão mista (gestão, conselho, pais, alunos e lideranças indígenas) para estudar a viabilidade de ambas as propostas e buscar soluções integradas.",
+                    "Realizar uma votação geral com toda a comunidade escolar para que a maioria decida.",
+                    "Adiar a decisão para o próximo ano, esperando que a situação dos banheiros não se agrave."
+                ],
+                correctIndex: 1, // B
+                justificativa: "A criação de uma comissão mista garante decisões participativas, respeita a cultura indígena e cumpre o princípio da gestão democrática da escola (Art. 14 da Lei nº 9.394/1996)."
+            },
+            {
+                question: "Após debates, a comissão mista sugere: usar o PDDE nos banheiros e organizar um mutirão para a horta. Como você, gestor(a), deve encaminhar essa proposta?",
+                options: [
+                    "Levar a proposta para deliberação e votação no Conselho Escolar, registrando em ata o plano de ação para ambas as frentes.",
+                    "Aprovar a sugestão imediatamente e iniciar as ações, agradecendo à comissão.",
+                    "Parabenizar pela ideia da horta, mas focar apenas na reforma, que envolve o recurso público.",
+                    "Criticar a comissão por não encontrar uma forma de fazer tudo com o recurso do PDDE."
+                ],
+                correctIndex: 0, // A
+                justificativa: "A formalização no Conselho Escolar garante transparência, legitimidade e cumprimento da legislação do PDDE (Resolução FNDE nº 07/2020)."
+            },
+            {
+                question: "Qual o maior ganho para a escola ao resolver este conflito de forma colaborativa?",
+                options: [
+                    "A economia de recursos públicos, que foram usados na prioridade técnica.",
+                    "A demonstração de autoridade da equipe gestora, que conseguiu convencer a comunidade.",
+                    "O fortalecimento da cultura de participação, o engajamento da comunidade e a legitimação do Conselho Escolar como um espaço real de deliberação.",
+                    "A conclusão rápida da reforma dos banheiros, evitando maiores problemas."
+                ],
+                correctIndex: 2, // C
+                justificativa: "A gestão democrática fortalece a cultura de participação e promove a co-responsabilidade da comunidade indígena na escola, conforme a legislação do PDDE e diretrizes da Educação Escolar Indígena."
+            }
+        ];
+
+        // State
+        let currentQuestion = 0;
+        let score = 0;
+
+        // DOM Elements
+        const viewStart = document.getElementById('view-start');
+        const viewQuiz = document.getElementById('view-quiz');
+        const viewFeedback = document.getElementById('view-feedback');
+        const viewEnd = document.getElementById('view-end');
+        const optionsContainer = document.getElementById('options-container');
+        const headerProgress = document.getElementById('header-progress');
+
+        const letters = ['A', 'B', 'C', 'D'];
+
+        function startGame() {
+            viewStart.classList.add('hidden');
+            viewQuiz.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            
+            // Update Headers & Progress
+            document.getElementById('question-counter').innerText = `Pergunta ${currentQuestion + 1} de ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion) / questions.length) * 100}%`;
+            headerProgress.innerText = `${currentQuestion}/${questions.length}`;
+            
+            // Set Text
+            document.getElementById('question-text').innerText = q.question;
+            
+            // Clear and build options
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 transition-all group flex gap-4 items-start focus:outline-none focus:ring-4 focus:ring-emerald-200";
+                btn.onclick = () => selectOption(index);
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        ${letters[index]}
+                    </span>
+                    <span class="text-slate-700 font-medium leading-relaxed pt-1">
+                        ${opt}
+                    </span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedIndex) {
+            const q = questions[currentQuestion];
+            const isCorrect = selectedIndex === q.correctIndex;
+            
+            if (isCorrect) score++;
+
+            // Prepare Feedback View
+            const feedbackHeader = document.getElementById('feedback-header');
+            if (isCorrect) {
+                feedbackHeader.className = "p-6 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-800";
+                feedbackHeader.innerHTML = `
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold">Excelente Decisão!</h2>
+                    <p class="mt-2 text-green-700">Sua escolha fortalece a gestão democrática.</p>
+                `;
+            } else {
+                feedbackHeader.className = "p-6 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-800";
+                feedbackHeader.innerHTML = `
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-600 mb-4">
+                        <i data-lucide="x-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold">Quase lá...</h2>
+                    <p class="mt-2 text-red-700">A opção correta era a letra <strong>${letters[q.correctIndex]}</strong>.</p>
+                `;
+            }
+
+            document.getElementById('justification-text').innerText = q.justificativa;
+
+            // Re-render icons since we injected new HTML
+            lucide.createIcons();
+
+            // Switch views
+            viewQuiz.classList.add('hidden');
+            viewFeedback.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                viewFeedback.classList.add('hidden');
+                viewQuiz.classList.remove('hidden');
+                loadQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            viewFeedback.classList.add('hidden');
+            viewEnd.classList.remove('hidden');
+            headerProgress.innerText = `${questions.length}/${questions.length}`;
+            document.getElementById('progress-bar').style.width = `100%`;
+            
+            document.getElementById('final-score').innerText = `${score} de ${questions.length}`;
+        }
+
+    </script>
+</body>
+</html>
