@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa do Tesouro - UEx Indígena</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Fonte Personalizada -->
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+    
+    <style>
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+
+        .font-luckiest { font-family: 'Luckiest Guy', cursive; }
+    </style>
+</head>
+<body id="body" class="min-h-screen flex items-center justify-center p-4 transition-colors duration-300">
+
+    <!-- Controles de Acessibilidade -->
+    <div class="absolute top-4 right-4 flex items-center gap-2 bg-[#2d3748] p-2 rounded-full shadow-lg z-50 text-white">
+        <button onclick="toggleTheme()" class="p-1 hover:text-amber-300 transition-colors" title="Mudar Tema">
+            <i id="theme-icon" data-lucide="moon" width="18" height="18"></i>
+        </button>
+        <div class="w-px h-4 bg-white/30 mx-1"></div>
+        <button onclick="changeFontSize(-2)" class="p-1 font-bold hover:text-amber-300 transition-colors text-sm">A-</button>
+        <button onclick="changeFontSize(2)" class="p-1 font-bold hover:text-amber-300 transition-colors text-sm">A+</button>
+    </div>
+
+    <!-- Container Principal do Jogo -->
+    <div id="main-card" class="max-w-3xl w-full p-6 md:p-12 rounded-2xl relative overflow-hidden animate-fade-in transition-colors duration-300">
+        <!-- O conteúdo será injetado dinamicamente aqui pelo JS -->
+        <div id="app-content"></div>
+    </div>
+
+    <script>
+        // --- DADOS DOS PASSOS E COORDENADAS NO MAPA ---
+        const STEPS = [
+            {
+                id: 1,
+                title: "Passo 1: Formalização da UEx",
+                hint: "É o documento principal que rege a associação da escola indígena, funcionando como a 'constituição' da comunidade escolar.",
+                answer: "ESTATUTO",
+                x: 20, y: 15
+            },
+            {
+                id: 2,
+                title: "Passo 2: Eleição da Diretoria",
+                hint: "É o nome da reunião formal da aldeia ou comunidade onde os membros da gestão da escola são escolhidos democraticamente, respeitando as normas do PDDE e do FNDE.",
+                answer: "ASSEMBLEIA",
+                x: 75, y: 35
+            },
+            {
+                id: 3,
+                title: "Passo 3: Abertura de Conta",
+                hint: "É o número de identificação da sua UEx na Receita Federal, necessário para abrir a conta bancária onde os recursos do PDDE serão depositados.",
+                answer: "CNPJ",
+                x: 25, y: 60
+            },
+            {
+                id: 4,
+                title: "Passo 4: Cadastro no Sistema",
+                hint: "É o nome do sistema web do FNDE onde você gerencia o Dinheiro Direto na Escola, registra as movimentações e presta contas de forma legal e segura.",
+                answer: "PDDEWEB",
+                x: 75, y: 80
+            }
+        ];
+
+        const TREASURE_COORD = { x: 50, y: 95 };
+
+        // --- ESTADO GLOBAL DA APLICAÇÃO ---
+        let state = {
+            gameState: 'start', // start, map, playing, success_step, end
+            stepProgress: 0,
+            activeStepIndex: 0,
+            errorFeedback: false,
+            theme: 'light',
+            fontSize: 16
+        };
+
+        // --- FUNÇÕES DE LÓGICA DO JOGO ---
+        function startGame() {
+            state.gameState = 'map';
+            state.stepProgress = 0;
+            render();
+        }
+
+        function openStep(index) {
+            if (index === state.stepProgress) {
+                state.activeStepIndex = index;
+                state.errorFeedback = false;
+                state.gameState = 'playing';
+                render();
+            }
+        }
+
+        function normalizeString(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '').toUpperCase();
+        }
+
+        function handleVerify(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('user-input');
+            const userAnswer = normalizeString(inputEl.value);
+            const correctAnswer = normalizeString(STEPS[state.activeStepIndex].answer);
+
+            if (userAnswer === correctAnswer) {
+                state.errorFeedback = false;
+                state.gameState = 'success_step';
+                render();
+            } else {
+                state.errorFeedback = true;
+                render();
+                // Focar de volta no input após renderizar o erro
+                setTimeout(() => { document.getElementById('user-input')?.focus(); }, 10);
+                setTimeout(() => {
+                    if (state.gameState === 'playing') {
+                        state.errorFeedback = false;
+                        render();
+                        setTimeout(() => { document.getElementById('user-input')?.focus(); }, 10);
+                    }
+                }, 3000);
+            }
+        }
+
+        function returnToMap() {
+            if (state.activeStepIndex === state.stepProgress) {
+                state.stepProgress++;
+            }
+            state.gameState = 'map';
+            render();
+        }
+
+        function openTreasure() {
+            if (state.stepProgress >= STEPS.length) {
+                state.gameState = 'end';
+                render();
+            }
+        }
+
+        // --- ACESSIBILIDADE ---
+        function toggleTheme() {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
+            lucide.createIcons();
+            applyThemeClasses();
+            render(); // Re-renderizar para atualizar classes internas
+        }
+
+        function changeFontSize(step) {
+            state.fontSize = Math.min(Math.max(state.fontSize + step, 14), 24);
+            document.getElementById('body').style.fontSize = `${state.fontSize}px`;
+        }
+
+        // --- CLASSES DINÂMICAS E RENDERIZAÇÃO ---
+        function getThemeClasses() {
+            return {
+                bgMain: state.theme === 'light' ? 'bg-[#fcf3d9]' : 'bg-[#1a1512]',
+                card: state.theme === 'light' ? 'bg-[#fff9e6] shadow-[0_8px_30px_rgb(0,0,0,0.12)]' : 'bg-[#2d241d] shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-[#4a3b2f]',
+                textTitle: state.theme === 'light' ? 'text-[#6b3110]' : 'text-[#e8b67d]',
+                textBody: state.theme === 'light' ? 'text-[#5c3a21]' : 'text-[#d4b9a1]',
+                button: 'bg-[#b45309] hover:bg-[#92400e] text-white transition-all transform hover:scale-105 active:scale-95 shadow-md',
+                input: state.theme === 'light' ? 'bg-white border-2 border-[#b45309]/30 focus:border-[#b45309] text-[#6b3110]' : 'bg-[#1a1512] border-2 border-[#e8b67d]/30 focus:border-[#e8b67d] text-[#e8b67d]'
+            };
+        }
+
+        function applyThemeClasses() {
+            const classes = getThemeClasses();
+            const body = document.getElementById('body');
+            const card = document.getElementById('main-card');
+            
+            // Limpar classes antigas e aplicar novas
+            body.className = `min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${classes.bgMain}`;
+            card.className = `max-w-3xl w-full p-6 md:p-12 rounded-2xl relative overflow-hidden animate-fade-in ${classes.card}`;
+        }
+
+        // --- RENDERIZADORES DE TELAS ---
+        function renderStartScreen(classes) {
+            return `
+                <div class="text-center flex flex-col items-center">
+                    <div class="flex items-center justify-center gap-4 mb-4">
+                        <div class="relative">
+                            <i data-lucide="target" width="60" height="60" class="text-pink-500 drop-shadow-md"></i>
+                        </div>
+                        <h1 class="text-5xl md:text-6xl tracking-wider drop-shadow-sm uppercase font-luckiest ${classes.textTitle}">
+                            MAPA DO TESOURO
+                        </h1>
+                    </div>
+                    
+                    <p class="mb-8 leading-relaxed text-lg max-w-lg ${classes.textBody}">
+                        Passo a passo do mapa que revela o caminho para habilitar sua UEx.
+                    </p>
+
+                    <div class="mb-10 p-6 rounded-xl text-left border ${state.theme === 'light' ? 'bg-[#f5deb3]/40 border-[#d4b9a1]' : 'bg-[#3e2e21] border-[#4a3b2f]'}">
+                        <h2 class="font-bold mb-2 flex items-center gap-2 ${classes.textTitle}">
+                            <i data-lucide="map" width="20" height="20"></i> Contexto para escolas indígenas:
+                        </h2>
+                        <p class="${classes.textBody}">
+                            O gestor indígena precisa habilitar sua Unidade Executora (UEx) para que a escola continue recebendo recursos do PDDE. Cada passo do mapa é inspirado na rotina da aldeia e na legislação vigente.
+                        </p>
+                    </div>
+
+                    <button onclick="startGame()" class="${classes.button} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 mx-auto">
+                        Começar a Jornada
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderMapLines() {
+            let lines = '';
+            for (let i = 0; i < STEPS.length; i++) {
+                const start = STEPS[i];
+                const end = i < STEPS.length - 1 ? STEPS[i + 1] : TREASURE_COORD;
+                const isCompleted = i < state.stepProgress;
+                const stroke = isCompleted ? (state.theme === 'light' ? '#b45309' : '#e8b67d') : (state.theme === 'light' ? '#d4b9a1' : '#4a3b2f');
+                const dash = isCompleted ? "0" : "8,8";
+                
+                lines += `<line x1="${start.x}%" y1="${start.y}%" x2="${end.x}%" y2="${end.y}%" stroke="${stroke}" stroke-width="4" stroke-dasharray="${dash}" class="transition-all duration-1000"></line>`;
+            }
+            return lines;
+        }
+
+        function renderMapScreen(classes) {
+            let pointsHtml = '';
+            STEPS.forEach((step, index) => {
+                const isCompleted = index < state.stepProgress;
+                const isCurrent = index === state.stepProgress;
+                const isLocked = index > state.stepProgress;
+
+                let iconHtml = isCompleted ? `<i data-lucide="check-circle" width="28" height="28"></i>` : 
+                               isCurrent ? `<i data-lucide="map-pin" width="28" height="28"></i>` : 
+                               `<i data-lucide="lock" width="24" height="24"></i>`;
+
+                let circleClass = `w-14 h-14 rounded-full border-4 flex items-center justify-center shadow-lg ` +
+                    (isCompleted ? 'bg-green-500 border-green-700 text-white ' : '') +
+                    (isCurrent ? 'bg-amber-500 border-amber-700 text-white ring-4 ring-amber-300/50 ' : '') +
+                    (isLocked ? 'bg-gray-300 border-gray-500 text-gray-600 ' : '');
+
+                pointsHtml += `
+                    <div onclick="${!isLocked ? `openStep(${index})` : ''}"
+                         class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all duration-300 z-10 
+                         ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
+                         ${isCurrent ? 'animate-bounce' : ''}"
+                         style="left: ${step.x}%; top: ${step.y}%;">
+                        <div class="${circleClass}">
+                            ${iconHtml}
+                        </div>
+                        <span class="mt-2 font-bold px-2 py-1 rounded text-xs text-center shadow-sm max-w-[120px] 
+                            ${state.theme === 'light' ? 'bg-white/90 text-[#6b3110]' : 'bg-black/80 text-[#e8b67d]'}">
+                            ${step.title}
+                        </span>
+                    </div>
+                `;
+            });
+
+            const isTreasureUnlocked = state.stepProgress >= STEPS.length;
+            const treasureClass = `w-20 h-20 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.4)] ` +
+                (isTreasureUnlocked ? 'bg-yellow-400 border-4 border-yellow-600 text-yellow-900' : 'bg-gray-400 border-4 border-gray-600 text-gray-700');
+
+            return `
+                <div class="flex flex-col animate-fade-in">
+                    <h2 class="text-3xl font-black text-center mb-6 uppercase font-luckiest tracking-widest ${classes.textTitle}">
+                        O Caminho da UEx
+                    </h2>
+                    <p class="text-center mb-6 font-medium ${classes.textBody}">
+                        Clique no próximo ponto disponível do mapa para revelar a dica.
+                    </p>
+
+                    <div class="relative w-full h-[500px] rounded-2xl border-2 overflow-hidden shadow-inner ${state.theme === 'light' ? 'bg-[#f5deb3]/30 border-[#d4b9a1]' : 'bg-[#1a1512]/50 border-[#4a3b2f]'}">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none">
+                            ${renderMapLines()}
+                        </svg>
+                        
+                        ${pointsHtml}
+
+                        <!-- Ponto Final (Tesouro) -->
+                        <div onclick="openTreasure()"
+                             class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all duration-500 z-10
+                             ${isTreasureUnlocked ? 'cursor-pointer hover:scale-110 animate-bounce' : 'opacity-50 grayscale cursor-not-allowed'}"
+                             style="left: ${TREASURE_COORD.x}%; top: ${TREASURE_COORD.y}%;">
+                            <div class="${treasureClass}">
+                                <i data-lucide="trophy" width="40" height="40" class="${isTreasureUnlocked ? 'text-yellow-800' : ''}"></i>
+                            </div>
+                            <span class="mt-2 font-black px-3 py-1 rounded text-sm uppercase tracking-widest ${state.theme === 'light' ? 'bg-yellow-100 text-yellow-800' : 'bg-yellow-900 text-yellow-200'}">
+                                UEx Habilitada
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPlayingScreen(classes) {
+            const step = STEPS[state.activeStepIndex];
+            // Para não perder o valor digitado entre re-renders
+            const currentInputValue = document.getElementById('user-input') ? document.getElementById('user-input').value : '';
+
+            return `
+                <div class="flex flex-col animate-fade-in">
+                    <div class="flex justify-between items-center mb-6 border-b-2 border-amber-900/10 pb-4">
+                        <span class="font-bold ${classes.textTitle} uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="map-pin" width="24" height="24" class="text-amber-500"></i> ${step.title}
+                        </span>
+                        <button onclick="startGame()" class="text-sm underline ${classes.textBody} hover:text-[#b45309]">
+                            Voltar ao Mapa
+                        </button>
+                    </div>
+
+                    <div class="flex-1 mb-8">
+                        <div class="p-6 rounded-xl mb-6 shadow-inner ${state.theme === 'light' ? 'bg-white/50' : 'bg-black/20'}">
+                            <h3 class="font-bold uppercase text-sm tracking-widest mb-3 opacity-80 ${classes.textTitle}">Dica do Tesouro:</h3>
+                            <p class="text-xl md:text-2xl font-medium leading-relaxed ${classes.textBody}">
+                                "${step.hint}"
+                            </p>
+                        </div>
+
+                        <form onsubmit="handleVerify(event)" class="flex flex-col items-center">
+                            <label class="font-bold mb-3 uppercase tracking-wider ${classes.textTitle}">
+                                Qual é a palavra-chave?
+                            </label>
+                            <div class="relative w-full max-w-md">
+                                <input 
+                                    type="text" 
+                                    id="user-input"
+                                    value="${currentInputValue}"
+                                    oninput="this.value = this.value.toUpperCase()"
+                                    placeholder="Digite sua resposta..."
+                                    class="w-full text-center text-2xl font-bold py-4 px-6 rounded-xl shadow-inner outline-none focus:ring-4 focus:ring-amber-500/30 transition-all uppercase tracking-widest ${classes.input} ${state.errorFeedback ? 'border-red-500 animate-shake' : ''}"
+                                    autofocus
+                                />
+                                ${state.errorFeedback ? `
+                                    <div class="absolute -bottom-8 left-0 right-0 text-red-500 font-bold text-sm flex items-center justify-center gap-1 animate-fade-in">
+                                        <i data-lucide="alert-circle" width="16" height="16"></i> Resposta incorreta, tente novamente!
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <button type="submit" class="${classes.button} mt-10 font-bold py-4 px-12 rounded-xl text-xl flex justify-center items-center gap-2 w-full max-w-md">
+                                <i data-lucide="key" width="24" height="24"></i> Verificar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSuccessScreen(classes) {
+            const step = STEPS[state.activeStepIndex];
+            return `
+                <div class="text-center flex flex-col items-center py-8 animate-fade-in">
+                    <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-inner relative">
+                        <div class="absolute inset-0 rounded-full border-4 border-green-400 animate-ping opacity-20"></div>
+                        <i data-lucide="check-circle" width="50" height="50"></i>
+                    </div>
+                    
+                    <h2 class="text-3xl font-black text-green-600 mb-2 uppercase tracking-wide">
+                        Desbloqueado!
+                    </h2>
+                    
+                    <div class="text-4xl font-black my-6 py-4 px-8 rounded-xl border-2 border-dashed border-green-500 tracking-[4px] font-luckiest ${state.theme === 'light' ? 'bg-green-50 text-green-800' : 'bg-green-900/30 text-green-400'}">
+                        ${step.answer}
+                    </div>
+                    
+                    <p class="text-lg mb-8 max-w-md ${classes.textBody}">
+                        Você liberou uma nova parte do mapa!
+                    </p>
+
+                    <button onclick="returnToMap()" class="${classes.button} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 w-full justify-center md:w-auto">
+                        <i data-lucide="map" width="24" height="24"></i> Voltar para o Mapa
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderEndScreen(classes) {
+            return `
+                <div class="text-center flex flex-col items-center animate-fade-in">
+                    <i data-lucide="trophy" width="80" height="80" class="text-yellow-500 mb-6 drop-shadow-lg"></i>
+                    <h2 class="text-4xl font-black mb-4 uppercase font-luckiest tracking-[2px] ${classes.textTitle}">
+                        Parabéns, Gestor(a)!
+                    </h2>
+                    <p class="text-xl mb-6 font-bold text-green-600">
+                        Você chegou ao fim do mapa e habilitou sua UEx!
+                    </p>
+
+                    <div class="p-8 rounded-2xl mb-8 w-full shadow-inner text-left space-y-4 ${state.theme === 'light' ? 'bg-[#f5deb3]/50' : 'bg-[#3e2e21]'}">
+                        <p class="text-lg leading-relaxed ${classes.textBody}">
+                            💡 <strong>Observação:</strong> A regularização da UEx permite que a escola indígena continue recebendo recursos do FNDE/PDDE, que podem ser aplicados de forma correta em infraestrutura, materiais e projetos.
+                        </p>
+                        <p class="text-lg leading-relaxed ${classes.textBody}">
+                            Essa simulação garante que os recursos públicos sejam utilizados de forma responsável e totalmente alinhada às necessidades da sua comunidade indígena.
+                        </p>
+                    </div>
+
+                    <button onclick="startGame()" class="${classes.button} font-bold py-4 px-10 rounded-xl text-xl flex items-center gap-3 mx-auto">
+                        <i data-lucide="rotate-ccw" width="24" height="24"></i> Jogar Novamente
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- FUNÇÃO PRINCIPAL DE ATUALIZAÇÃO ---
+        function render() {
+            const classes = getThemeClasses();
+            const contentDiv = document.getElementById('app-content');
+            
+            let html = '';
+            switch(state.gameState) {
+                case 'start': html = renderStartScreen(classes); break;
+                case 'map': html = renderMapScreen(classes); break;
+                case 'playing': html = renderPlayingScreen(classes); break;
+                case 'success_step': html = renderSuccessScreen(classes); break;
+                case 'end': html = renderEndScreen(classes); break;
+            }
+
+            contentDiv.innerHTML = html;
+            
+            // Recriar os ícones Lucide sempre que o DOM for atualizado
+            lucide.createIcons();
+        }
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = () => {
+            applyThemeClasses();
+            render();
+            document.getElementById('body').style.fontSize = `${state.fontSize}px`;
+        };
+
+    </script>
+</body>
+</html>
